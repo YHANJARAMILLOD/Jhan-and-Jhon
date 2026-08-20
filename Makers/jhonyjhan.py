@@ -159,4 +159,4 @@ prompt = """Quiero aprender a programar en Python, ¿por dónde debería empezar
             No te vayas más alla de lo que te estoy pidiendo.
             Si no estas seguro de agregar algo me lo preguntas antes de agregarlo.
             """
-# print(consulta(modelo, system_prompt, prompt))
+print(consulta(modelo, system_prompt, prompt))
