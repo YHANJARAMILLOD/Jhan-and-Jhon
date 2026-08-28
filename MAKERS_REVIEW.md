@@ -31,3 +31,44 @@ En un workflow financiero, el modelo puede interpretar lenguaje, pero el sistema
 1. Core: mover la API key de Groq a una variable de entorno y fallar con un mensaje claro si no existe.
 2. Intermediate: crear `validate_financial_movement(output, input_text)` para schema, monto, moneda, fecha y categorias permitidas.
 3. Advanced: separar `prompts.py`, `models.py` y `validators.py`, manteniendo un script simple de ejecucion.
+
+<!-- MAKERS_REVIEW_2026_08_27_START -->
+## Revision docente - 2026-08-27
+
+### Lo que vimos
+
+- Hay avance moviendo parte del flujo a script y agregando requirements/setup.
+- El proyecto parece orientado a clasificacion/anonimizacion financiera.
+- Todavia falta ordenar configuracion, prompts, validacion y evidencia.
+- Las API keys y configuracion deben vivir fuera del codigo.
+- El aporte individual debe quedar mas claro por commits y ramas.
+
+### Reto de hoy
+
+Hagan una validacion minima de movimiento financiero:
+
+1. Definir campos esperados: monto, moneda, fecha, categoria, descripcion.
+2. Rechazar monto vacio, moneda invalida, fecha ambigua o categoria no permitida.
+3. Registrar 5 casos en vals/results.md.
+
+### Tarea obligatoria: diagrama de arquitectura
+
+Crear docs/arquitectura.md con un diagrama Mermaid que muestre:
+
+`mermaid
+flowchart LR
+  DocumentoOTexto --> Preprocesamiento
+  Preprocesamiento --> Modelo
+  Modelo --> MovimientoEstructurado
+  MovimientoEstructurado --> ValidadorMovimiento
+  ValidadorMovimiento --> SalidaAnonimizada
+  Evals --> ValidadorMovimiento
+`
+
+El diagrama debe mostrar donde se anonimiza, donde se llama al modelo y donde se valida.
+
+### Criterio de aceptacion
+
+No queremos mas codigo sin contrato. Queremos una salida financiera minima que se pueda revisar.
+<!-- MAKERS_REVIEW_2026_08_27_END -->
+
