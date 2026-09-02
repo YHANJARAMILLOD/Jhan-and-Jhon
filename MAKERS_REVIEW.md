@@ -72,3 +72,29 @@ El diagrama debe mostrar donde se anonimiza, donde se llama al modelo y donde se
 No queremos mas codigo sin contrato. Queremos una salida financiera minima que se pueda revisar.
 <!-- MAKERS_REVIEW_2026_08_27_END -->
 
+
+<!-- MAKERS_CODE_ARCH_REVIEW_2026_09_01_START -->
+## Revision de codigo y arquitectura - 2026-09-01
+
+### Lectura docente
+
+- Jhoneyker estructuro el proyecto y movio piezas hacia Makers/jhonyjhan.py.
+- No se detecto docs/arquitectura.md.
+- Falta contrato de salida, evals y validacion financiera minima.
+- Yhan debe dejar evidencia individual mas clara si el trabajo esta repartido.
+
+### Revision de principios
+
+- Bien: salir del notebook hacia script es buen paso.
+- Falta: separar configuracion, prompts, modelo, validacion y datos.
+- Falta: definir que significa una salida correcta.
+
+### Pendiente de equipo
+
+Crear docs/arquitectura.md, definir campos esperados y crear alidate_financial_movement con 5 casos.
+
+### Pendiente por poca evidencia individual
+
+Yhan debe hacer un commit propio verificable: evals, validador, README operativo o arquitectura.
+<!-- MAKERS_CODE_ARCH_REVIEW_2026_09_01_END -->
+
