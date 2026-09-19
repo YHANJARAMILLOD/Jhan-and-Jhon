@@ -1,15 +1,17 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
 import ollama
 from groq import Groq
 
-load_dotenv()
+ruta_env = Path(__file__).resolve().parent.parent / '.env'
+load_dotenv(dotenv_path=ruta_env)
 api_key = os.getenv("GROQ_API_KEY")
 
 # 3. Verifica que la clave realmente se haya cargado
 if not api_key:
     raise ValueError(
-        "❌ Error: La variable de entorno 'GROQ_API_KEY' no está configurada. "
+        "❌ Error: La variable de entorno no está configurada. "
         "Asegúrate de agregarla a tu archivo .env."
     )
 
