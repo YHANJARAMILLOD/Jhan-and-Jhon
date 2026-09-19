@@ -1,5 +1,20 @@
+import os
+from dotenv import load_dotenv
 import ollama
 from groq import Groq
+
+load_dotenv()
+api_key = os.getenv("GROQ_API_KEY")
+
+# 3. Verifica que la clave realmente se haya cargado
+if not api_key:
+    raise ValueError(
+        "❌ Error: La variable de entorno 'GROQ_API_KEY' no está configurada. "
+        "Asegúrate de agregarla a tu archivo .env."
+    )
+
+# 4. Inicializa tu cliente de Groq (tu "usuario") usando la variable en lugar del texto fijo
+usuario = Groq(api_key=api_key)
 
 egreso = """
 Bancolombia: JOSE, transferiste $68,000.00 a la llave @vargas6396 desde tu cuenta *2384 a
@@ -186,7 +201,7 @@ anonimizado = anonimizar_movimiento(analisis)
 
 print(analisis)
 print(anonimizado)
-usuario = Groq(api_key="YOUR_API_KEY_HERE")  # Reemplaza con tu clave
+#usuario = Groq(api_key="YOUR_API_KEY_HERE")  # Reemplaza con tu clave
 
 def consulta(prompt, max_tokens=1000):
     response = usuario.chat.completions.create(
