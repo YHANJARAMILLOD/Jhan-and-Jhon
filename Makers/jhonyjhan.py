@@ -1,5 +1,8 @@
 import os
-from dotenv import load_dotenv, find_dotenv
+import json
+import re
+from datetime import datetime
+from dotenv import load_dotenv
 from pathlib import Path
 import ollama
 from groq import Groq
@@ -68,7 +71,9 @@ def extraer_movimiento(movimiento):
     9. Si el movimiento no es financiero, indica que no es un movimiento
     financiero.
 
-    10. Si existen varios movimientos, analiza cada uno por separado.
+    10. Detecta todos los movimientos financieros presentes en el texto.
+        Cada transferencia, compra, pago, ingreso o egreso independiente
+        debe convertirse en un elemento separado de la lista.
 
     11. El tipo de movimiento solamente puede ser:
         "ingreso" o "egreso".
@@ -108,33 +113,44 @@ def extraer_movimiento(movimiento):
 
     22. Si el movimiento no tiene una entidad involucrada, utiliza null en el campo "entidad".
 
+    23. Incluye una descripción breve y fiel al movimiento en el campo
+        "descripcion". No inventes información.
+
 
     FORMATO DE SALIDA:
 
-    Responde EXCLUSIVAMENTE con JSON válido.
+    Responde EXCLUSIVAMENTE con JSON válido. No uses Markdown ni bloques ```.
 
-    La estructura debe ser:
+    Devuelve siempre una lista JSON. Nunca devuelvas un objeto individual.
+    Si hay un solo movimiento, la lista debe tener un solo elemento.
 
-    {
-        "es_movimiento_financiero": true,
-        "movimiento": {
-            "nombre_remitente": "texto|null",
-            "tipo": "ingreso|egreso|null",
-            "categoria": "categoria|null",
-            "monto": "numero|null",
-            "moneda": "codigo|null",
-            "nombre_destinatario": "texto|null",
-            "entidad": "texto|null",
-            "fecha": "YYYY-MM-DD|null"
+    La estructura de cada elemento debe ser:
+
+    [
+        {
+            "es_movimiento_financiero": true,
+            "movimiento": {
+                "nombre_remitente": "texto|null",
+                "tipo": "ingreso|egreso|null",
+                "categoria": "categoria|null",
+                "monto": "numero|null",
+                "moneda": "codigo|null",
+                "nombre_destinatario": "texto|null",
+                "entidad": "texto|null",
+                "fecha": "YYYY-MM-DD|null",
+                "descripcion": "texto"
+            }
         }
-    }
+    ]
 
     Si no es un movimiento financiero:
 
-    {
-        "es_movimiento_financiero": false,
-        "movimiento": null
-    }
+    [
+        {
+            "es_movimiento_financiero": false,
+            "movimiento": null
+        }
+    ]
 
     Nunca agregues explicaciones fuera del JSON.
     """
@@ -149,7 +165,110 @@ def extraer_movimiento(movimiento):
         }
     )
 
-    return respuesta["message"]["content"]
+    contenido = respuesta["message"]["content"].strip()
+    movimientos = json.loads(contenido)
+
+    if not isinstance(movimientos, list):
+        raise ValueError("El modelo debe devolver una lista JSON de movimientos.")
+
+    return movimientos
+
+
+CATEGORIAS_PERMITIDAS = {
+    "alimentacion",
+    "transporte",
+    "entretenimiento",
+    "vivienda",
+    "salud",
+    "educacion",
+    "compras",
+    "servicios",
+    "transferencia_persona",
+    "otros",
+}
+MONEDAS_PERMITIDAS = {"COP", "USD", "EUR", "MXN", "ARS", "CLP", "PEN", "BRL"}
+CAMPOS_MOVIMIENTO = {
+    "nombre_remitente",
+    "tipo",
+    "categoria",
+    "monto",
+    "moneda",
+    "nombre_destinatario",
+    "entidad",
+    "fecha",
+    "descripcion",
+}
+
+
+def validate_financial_movement(output, input_text):
+    """Valida y devuelve una lista de movimientos financieros estructurados."""
+    if not isinstance(input_text, str) or not input_text.strip():
+        raise ValueError("El texto de entrada no puede estar vacío.")
+
+    if isinstance(output, str):
+        try:
+            output = json.loads(output)
+        except json.JSONDecodeError as error:
+            raise ValueError("La salida no contiene JSON válido.") from error
+
+    if not isinstance(output, list) or not output:
+        raise ValueError("La salida debe ser una lista JSON no vacía.")
+
+    errores = []
+    for indice, item in enumerate(output):
+        ubicacion = f"movimiento[{indice}]"
+        if not isinstance(item, dict):
+            errores.append(f"{ubicacion} debe ser un objeto JSON.")
+            continue
+
+        if set(item) != {"es_movimiento_financiero", "movimiento"}:
+            errores.append(f"{ubicacion} tiene un schema inválido.")
+            continue
+
+        if item["es_movimiento_financiero"] is False:
+            if item["movimiento"] is not None:
+                errores.append(f"{ubicacion}.movimiento debe ser null.")
+            continue
+
+        datos = item["movimiento"]
+        if item["es_movimiento_financiero"] is not True or not isinstance(datos, dict):
+            errores.append(f"{ubicacion} debe representar un movimiento financiero.")
+            continue
+
+        if set(datos) != CAMPOS_MOVIMIENTO:
+            errores.append(f"{ubicacion} tiene campos incompletos o desconocidos.")
+            continue
+
+        monto = datos["monto"]
+        if isinstance(monto, bool) or not isinstance(monto, (int, float)) or monto <= 0:
+            errores.append(f"{ubicacion}.monto debe ser un número positivo.")
+
+        moneda = datos["moneda"]
+        if not isinstance(moneda, str) or moneda.upper() not in MONEDAS_PERMITIDAS:
+            errores.append(f"{ubicacion}.moneda no es válida.")
+
+        fecha = datos["fecha"]
+        if (
+            not isinstance(fecha, str)
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha)
+        ):
+            errores.append(f"{ubicacion}.fecha debe usar el formato YYYY-MM-DD.")
+        else:
+            try:
+                datetime.strptime(fecha, "%Y-%m-%d")
+            except ValueError:
+                errores.append(f"{ubicacion}.fecha no es una fecha válida.")
+
+        if datos["categoria"] not in CATEGORIAS_PERMITIDAS:
+            errores.append(f"{ubicacion}.categoria no está permitida.")
+
+        if not isinstance(datos["descripcion"], str) or not datos["descripcion"].strip():
+            errores.append(f"{ubicacion}.descripcion no puede estar vacía.")
+
+    if errores:
+        raise ValueError("Salida financiera inválida: " + " ".join(errores))
+
+    return output
 
 def anonimizar_nombre(nombre):
     """Conserva las primeras 3 letras y reemplaza el resto por asteriscos."""
@@ -168,14 +287,20 @@ def anonimizar_movimiento(movimiento):
     """
     Anonimiza un movimiento financiero sin utilizar IA.
 
-    - Egreso: anonimiza nombre_remitente.
-    - Ingreso: anonimiza nombre_destinatario.
+    - Anonimiza nombre_remitente y nombre_destinatario.
     - No financiero: devuelve el JSON sin modificaciones.
     """
-    import json
-
+    
     if isinstance(movimiento, str):
         movimiento = json.loads(movimiento)
+
+    if isinstance(movimiento, list):
+        return [anonimizar_movimiento(item) for item in movimiento]
+
+    if not isinstance(movimiento, dict):
+        raise TypeError(
+            "El movimiento debe ser un objeto JSON o una lista de objetos JSON."
+        )
 
     if not movimiento.get("es_movimiento_financiero", False):
         return movimiento
@@ -185,24 +310,21 @@ def anonimizar_movimiento(movimiento):
     if not datos:
         return movimiento
 
-    tipo = datos.get("tipo")
-    if tipo == "egreso":
-        datos["nombre_remitente"] = anonimizar_nombre(
-            datos.get("nombre_remitente")
-        )
-
-    elif tipo == "ingreso":
-        datos["nombre_destinatario"] = anonimizar_nombre(
-            datos.get("nombre_destinatario")
-        )
+    datos["nombre_remitente"] = anonimizar_nombre(
+        datos.get("nombre_remitente")
+    )
+    datos["nombre_destinatario"] = anonimizar_nombre(
+        datos.get("nombre_destinatario")
+    )
 
     return movimiento
 
 analisis = extraer_movimiento(egreso)
+validate_financial_movement(analisis, egreso)
 anonimizado = anonimizar_movimiento(analisis)
 
-print(analisis)
-print(anonimizado)
+print(json.dumps(analisis, ensure_ascii=False, indent=2))
+print(json.dumps(anonimizado, ensure_ascii=False, indent=2))
 #usuario = Groq(api_key="YOUR_API_KEY_HERE")  # Reemplaza con tu clave
 
 def consulta(prompt, max_tokens=1000):
@@ -271,7 +393,7 @@ def consulta(prompt, max_tokens=1000):
 
             17. Si no existe suficiente información para determinar que la categoría es incorrecta, debes mantener la categoría original.
 
-            18. Si "es_movimiento_financiero" es false, devuelve el movimiento sin modificaciones.
+            18. Si "es_movimiento_financiero" es false, devuelve ese elemento sin modificaciones.
 
             19. No cambies:
 
@@ -282,6 +404,7 @@ def consulta(prompt, max_tokens=1000):
             * nombre_destinatario
             * entidad
             * fecha
+            * descripcion
 
             20. Solamente puedes modificar:
 
@@ -291,33 +414,39 @@ def consulta(prompt, max_tokens=1000):
 
             FORMATO DE SALIDA:
 
-            {
-            "es_movimiento_financiero": true,
-            "movimiento": {
-            "nombre_remitente": "texto|null",
-            "tipo": "ingreso|egreso|null",
-            "categoria": "categoria",
-            "monto": "numero|null",
-            "moneda": "codigo|null",
-            "nombre_destinatario": "texto|null",
-            "entidad": "texto|null",
-            "fecha": "YYYY-MM-DD|null"
-            }
-            }
+            Responde EXCLUSIVAMENTE con una lista JSON válida. No uses Markdown
+            ni bloques ``` y conserva todos los elementos recibidos.
+            Devuelve un elemento por cada movimiento revisado:
 
-            Si no es un movimiento financiero:
-
-            {
-            "es_movimiento_financiero": false,
-            "movimiento": null
-            }
+            [
+                {
+                    "es_movimiento_financiero": true,
+                    "movimiento": {
+                        "nombre_remitente": "texto|null",
+                        "tipo": "ingreso|egreso|null",
+                        "categoria": "categoria",
+                        "monto": "numero|null",
+                        "moneda": "codigo|null",
+                        "nombre_destinatario": "texto|null",
+                        "entidad": "texto|null",
+                        "fecha": "YYYY-MM-DD|null",
+                        "descripcion": "texto"
+                    }
+                }
+            ]
 
             Nunca agregues explicaciones, comentarios ni texto fuera del JSON.
             """},
             {"role": "user", "content": prompt}
         ],
     )
-    return response.choices[0].message.content
+    contenido = response.choices[0].message.content.strip()
+    movimientos = json.loads(contenido)
+
+    if not isinstance(movimientos, list):
+        raise ValueError("El revisor debe devolver una lista JSON de movimientos.")
+
+    return movimientos
 prompt = f"""Revisa el siguiente movimiento financiero.
 
 Determina si la categoría asignada es correcta teniendo en cuenta toda la información disponible. Si es un egreso, presta especial atención al nombre_remitente.
@@ -326,8 +455,10 @@ Si la categoría es incorrecta y existe evidencia suficiente, corrígela. Si es 
 
 No modifiques ningún otro campo.
 
-Movimiento:
+Movimientos:
 
-{anonimizado}
+{json.dumps(anonimizado, ensure_ascii=False, indent=2)}
             """
-print(consulta(prompt))
+revisado = consulta(prompt)
+validate_financial_movement(revisado, egreso)
+print(json.dumps(revisado, ensure_ascii=False, indent=2))
