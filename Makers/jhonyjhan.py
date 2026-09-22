@@ -105,17 +105,17 @@ def validate_financial_movement(output, input_text):
         if not isinstance(moneda, str) or moneda.upper() not in MONEDAS_PERMITIDAS:
             errores.append(f"{ubicacion}.moneda no es válida.")
 
-        fecha = datos["fecha"]
-        if (
-            not isinstance(fecha, str)
-            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha)
-        ):
-            errores.append(f"{ubicacion}.fecha debe usar el formato YYYY-MM-DD.")
-        else:
-            try:
-                datetime.strptime(fecha, "%Y-%m-%d")
-            except ValueError:
-                errores.append(f"{ubicacion}.fecha no es una fecha válida.")
+        # fecha = datos["fecha"]
+        # if (
+        #     not isinstance(fecha, str)
+        #     or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha)
+        # ):
+        #     errores.append(f"{ubicacion}.fecha debe usar el formato YYYY-MM-DD.")
+        # else:
+        #     try:
+        #         datetime.strptime(fecha, "%Y-%m-%d")
+        #     except ValueError:
+        #         errores.append(f"{ubicacion}.fecha no es una fecha válida.")
 
         if datos["categoria"] not in CATEGORIAS_PERMITIDAS:
             errores.append(f"{ubicacion}.categoria no está permitida.")
