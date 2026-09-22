@@ -9,6 +9,7 @@ def CATEGORIAS_PERMITIDAS():
     "compras",
     "servicios",
     "transferencia_persona",
+    "ingreso_laboral",
     "otros",
 }
 
@@ -26,4 +27,15 @@ def CAMPOS_MOVIMIENTO():
     "entidad",
     "fecha",
     "descripcion",
+    "requiere_revision_humana",
+    "motivo_revision",
+}
+
+def MOTIVOS_REVISION_PERMITIDOS():
+    return {
+    "posible_intento_de_manipulacion",
+    "posible_duplicado",
+    "datos_insuficientes",
+    "moneda_no_especificada",
+    "formato_numerico_ambiguo",
 }

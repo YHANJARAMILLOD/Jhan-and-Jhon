@@ -176,14 +176,6 @@ def anonimizar_movimiento(movimiento):
     )
     return movimiento
 
-prompt_extraer_movimiento = principales_prompts.PROMPT_EXTRAER_MOVIMIENTO()
-analisis = extraer_movimiento(movimiento=egreso, prompt=prompt_extraer_movimiento)
-validate_financial_movement(analisis, egreso)
-anonimizado = anonimizar_movimiento(analisis)
-
-print(json.dumps(analisis, ensure_ascii=False, indent=2))
-print(json.dumps(anonimizado, ensure_ascii=False, indent=2))
-
 def consulta_llm(prompt1,prompt2, max_tokens=1000):
     response = usuario.chat.completions.create(
         model="openai/gpt-oss-120b",
@@ -201,8 +193,19 @@ def consulta_llm(prompt1,prompt2, max_tokens=1000):
         raise ValueError("El revisor debe devolver una lista JSON de movimientos.")
 
     return movimientos
-prompt = prompts_secundarios.PROMPT_CORREGIR_CATEGORIA(json.dumps(anonimizado, ensure_ascii=False, indent=2))
-prompt_revisor = principales_prompts.PROMPT_REVISAR_CATEGORIA()
-revisado = consulta_llm(prompt, prompt_revisor)
-validate_financial_movement(revisado, egreso)
-print(json.dumps(revisado, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    prompt_extraer_movimiento = principales_prompts.PROMPT_EXTRAER_MOVIMIENTO()
+    analisis = extraer_movimiento(movimiento=egreso, prompt=prompt_extraer_movimiento)
+    validate_financial_movement(analisis, egreso)
+    anonimizado = anonimizar_movimiento(analisis)
+
+    print(json.dumps(analisis, ensure_ascii=False, indent=2))
+    print(json.dumps(anonimizado, ensure_ascii=False, indent=2))
+
+    prompt = prompts_secundarios.PROMPT_CORREGIR_CATEGORIA(json.dumps(anonimizado, ensure_ascii=False, indent=2))
+    prompt_revisor = principales_prompts.PROMPT_REVISAR_CATEGORIA()
+    revisado = consulta_llm(prompt, prompt_revisor)
+    validate_financial_movement(revisado, egreso)
+    print(json.dumps(revisado, ensure_ascii=False, indent=2))
