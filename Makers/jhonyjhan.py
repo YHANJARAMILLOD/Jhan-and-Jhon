@@ -22,8 +22,7 @@ if not api_key:
 usuario = Groq(api_key=api_key)
 
 egreso = """
-Bancolombia: JOSE, transferiste $68,000.00 a la llave @vargas6396 desde tu cuenta *2384 a
-JOSE LUIS VALENCIA TIRADO el 03/08/26 a las 22:26. Con Bre-b es de una y gratis. Dudas al 018000912345.
+Banco: compra supermercado -50.000 COP, nomina +2.500.000 COP, transporte -8.000 COP.
 """
 
 def extraer_movimiento(movimiento):
