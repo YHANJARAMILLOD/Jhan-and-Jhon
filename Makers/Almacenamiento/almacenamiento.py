@@ -69,7 +69,7 @@ def guardar_movimientos(cliente_id, extracto_id, movimientos_anonimizados, db_pa
     Persiste el resultado ya anonimizado de un extracto para un cliente.
 
     `movimientos_anonimizados` es la lista que produce
-    `anonimizar_movimiento()` en jhonyjhan.py: no se vuelve a llamar a
+    `anonimizar_movimiento()` en Anonimizacion/anonimizacion.py: no se vuelve a llamar a
     Ollama/Groq ni a anonimizar aquí, solo se guarda lo ya procesado.
 
     Solo se guardan los elementos con es_movimiento_financiero=True.

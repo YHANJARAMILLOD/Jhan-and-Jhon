@@ -1,2 +1,24 @@
+# Variables de entorno y credenciales
 .env
+
+# Datos locales (base de datos SQLite y resultados de ejecución)
 datos/
+
+# Entorno virtual
+.venv/
+venv/
+
+# Bytecode de Python
+__pycache__/
+*.py[cod]
+
+# Pytest
+.pytest_cache/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
