@@ -77,21 +77,24 @@ flowchart TD
     B --> C{"validate_financial_movement"}
     C -- inválido --> X[ValueError]
     C -- válido --> D["Anonimización<br/>(sin IA)"]
-    D --> E["Revisión de categoría<br/>Groq · gpt-oss-120b (nube)"]
+    D --> R["RAG: ejemplos parecidos<br/>Ollama · bge-m3 (local)"]
+    R --> E["Revisión de categoría<br/>Groq · gpt-oss-120b (nube)"]
+    K[(datos/rag_categorias.db)] -.-> R
     E --> F{"validate_financial_movement<br/>+ validar_revision"}
     F -- inválido --> X
     F -- válido --> G[Movimientos estructurados y anonimizados]
-    G -. pendiente de integrar .-> H[(SQLite<br/>datos/movimientos.db)]
+    G --> H[(SQLite<br/>datos/movimientos.db)]
 ```
 
 | Paso | Qué hace | Dónde |
 |---|---|---|
 | 1. Extracción | El LLM local extrae la lista de movimientos siguiendo `PROMPT_EXTRAER_MOVIMIENTO`. | `Modelos/consultas_llm.py` → `extraer_movimiento` |
 | 2. Validación | Verifica esquema, tipos de datos y reglas de negocio del prompt. | `Validaciones/validaciones.py` |
-| 3. Anonimización | Enmascara `nombre_remitente` y `nombre_destinatario` (`Juan Pérez` → `Jua*******`). | `Anonimizacion/anonimizacion.py` |
-| 4. Revisión | Un segundo LLM revisa y corrige **solo** la categoría (`PROMPT_REVISAR_CATEGORIA`). | `Modelos/consultas_llm.py` → `consulta_llm` |
-| 5. Validación de la revisión | Revalida el esquema y comprueba que el revisor no modificó otros campos. | `Validaciones/validaciones.py` → `validar_revision` |
-| 6. Almacenamiento | Persistencia en SQLite por cliente y extracto. *(Implementado, aún no conectado al flujo.)* | `Almacenamiento/almacenamiento.py` |
+| 3. Anonimización | Enmascara el nombre del cliente (remitente en egresos, destinatario en ingresos), también dentro de `descripcion` (`Juan Pérez` → `Jua*******`). La contraparte se conserva. | `Anonimizacion/anonimizacion.py` |
+| 4. RAG | Busca en local los ejemplos ya categorizados más parecidos a cada movimiento y los agrega al prompt del revisor. | `Recuperacion/recuperacion.py` |
+| 5. Revisión | Un segundo LLM revisa y corrige **solo** la categoría (`PROMPT_REVISAR_CATEGORIA`). | `Modelos/consultas_llm.py` → `consulta_llm` |
+| 6. Validación de la revisión | Revalida el esquema y comprueba que el revisor no modificó otros campos. | `Validaciones/validaciones.py` → `validar_revision` |
+| 7. Almacenamiento | Persistencia en SQLite por cliente y extracto, desde `main.py`. | `Almacenamiento/almacenamiento.py` |
 
 ---
 
@@ -109,11 +112,13 @@ Jhan-and-Jhon/
 ├── docs/
 │   └── arquitectura.md               # diagrama de arquitectura
 └── Makers/
-    ├── main.py                       # ⭐ punto de entrada: flujo principal
-    ├── ejecutar_casos.py             # ejecuta los casos de prueba y guarda el DataFrame en CSV
+    ├── main.py                       # ⭐ punto de entrada: CLI que procesa y guarda en SQLite
+    ├── ejecutar_casos.py             # ejecuta los casos de prueba y guarda el DataFrame en CSV (--sin-rag)
+    ├── rag.py                        # CLI del RAG: indexar, buscar y agregar ejemplos
     ├── Constantes/
     │   ├── Principales_constantes.py # categorías, monedas, campos, motivos, tipos, modelos, columnas
-    │   └── casos_prueba.py           # los 5 casos de prueba
+    │   ├── casos_prueba.py           # los 5 casos de prueba
+    │   └── ejemplos_categorias.py    # ejemplos semilla categorizados para el RAG
     ├── Prompts/
     │   ├── principales_prompts.py    # system prompts: extracción y revisión de categoría
     │   └── prompts_secundarios.py    # prompt de usuario para el revisor
@@ -125,13 +130,17 @@ Jhan-and-Jhon/
     │   └── anonimizacion.py          # anonimización de nombres sin IA
     ├── Almacenamiento/
     │   └── almacenamiento.py         # persistencia en SQLite
+    ├── Recuperacion/
+    │   └── recuperacion.py           # RAG: índice de ejemplos, embeddings y búsqueda
     ├── Pipeline/
     │   └── pipeline.py               # procesar_movimiento: flujo completo sin prints
     ├── Evaluacion/
     │   └── evaluacion.py             # ejecutar_casos: corre los casos y arma el DataFrame
     └── tests/
         ├── conftest.py               # fixture que ejecuta los casos una vez por sesión
-        └── test_casos.py             # requisitos mínimos de cada caso
+        ├── test_casos.py             # requisitos mínimos de cada caso (llama a los LLM)
+        ├── test_anonimizacion.py     # tests unitarios sin LLM
+        └── test_recuperacion.py      # tests unitarios del RAG con embeddings falsos
 ```
 
 ### Constantes (`Constantes/Principales_constantes.py`)
@@ -148,6 +157,8 @@ Las constantes se definen como funciones y se instancian en el módulo que las u
 | `CAMPOS_TEXTO_OPCIONAL` | `nombre_remitente`, `nombre_destinatario`, `entidad` |
 | `MODELO_EXTRACCION` | `qwen3:8b` |
 | `MODELO_REVISION` | `openai/gpt-oss-120b` |
+| `MODELO_EMBEDDINGS` | `bge-m3` (embeddings multilingües para el RAG) |
+| `RAG_TOP_K` / `RAG_UMBRAL_SIMILITUD` | Máximo de ejemplos por movimiento (3) y similitud mínima (0.65) |
 | `COLUMNAS_RESULTADOS` | Orden de las columnas del DataFrame de resultados |
 | `CASOS_PRUEBA` *(en `casos_prueba.py`)* | Los 5 casos de prueba |
 
@@ -159,6 +170,7 @@ Las constantes se definen como funciones y se instancian en el módulo que las u
 |---|---|---|---|
 | Extracción y clasificación | `qwen3:8b` | Ollama | Local |
 | Revisión de categoría | `openai/gpt-oss-120b` | Groq | Nube (API) |
+| Embeddings del RAG | `bge-m3` | Ollama | Local |
 
 Ambos se llaman con `temperature=0` para obtener respuestas lo más deterministas posible. Los nombres de los modelos se configuran en `Constantes/Principales_constantes.py`.
 
@@ -172,8 +184,10 @@ Texto original ──► Ollama (local) ──► Anonimización ──► Groq 
 ```
 
 * El texto original **solo lo procesa el modelo local**.
-* Antes de enviar los movimientos a Groq se anonimizan `nombre_remitente` y `nombre_destinatario`, conservando las 3 primeras letras (`Netflix` → `Net****`).
-* ⚠️ **Hoy no se anonimizan** `descripcion` ni `entidad`, y la descripción puede contener nombres o datos personales. Ver [Correcciones pendientes](#-correcciones-pendientes).
+* Antes de enviar los movimientos a Groq se anonimiza el nombre del **cliente**, conservando las 3 primeras letras (`Juan Pérez` → `Jua*******`): el remitente en un egreso y el destinatario en un ingreso. Si el tipo es desconocido se anonimizan ambos.
+* La **contraparte** (el comercio al que se paga o quien envía un ingreso) se conserva, porque es la mejor evidencia para la categoría.
+* El nombre del cliente también se enmascara dentro de `descripcion`. ⚠️ Otros nombres que solo aparezcan en la descripción, y el campo `entidad`, no se anonimizan.
+* Los embeddings del RAG se calculan en local. Los ejemplos que se agregan con `agregar_ejemplo` se anonimizan antes de guardarse, y los que recibe el revisor viajan a Groq junto al movimiento.
 * Si se quiere un procesamiento **100 % local**, habría que reemplazar la revisión en Groq por un modelo de Ollama.
 
 ---
@@ -221,7 +235,8 @@ El archivo `.env` está en `.gitignore` y no se sube al repositorio.
 
 ```bash
 ollama pull qwen3:8b
-ollama list        # comprobar que el modelo está disponible
+ollama pull bge-m3 # embeddings del RAG
+ollama list        # comprobar que los modelos están disponibles
 ```
 
 Ollama debe estar en ejecución (servicio en segundo plano o `ollama serve`) al correr el proyecto.
@@ -238,14 +253,22 @@ Los imports del proyecto son relativos a la carpeta `Makers`, por lo que el prog
 source .venv/bin/activate       # Linux / macOS
 
 cd Makers
-python main.py
+python main.py "Pagué 45.900 COP a Netflix el 2026-09-01" --cliente cliente_001
+python main.py --archivo transacciones.txt --cliente cliente_001   # una transacción por línea (# = comentario)
+python main.py --listar --cliente cliente_001                      # ver lo guardado
 ```
 
-El texto a analizar está definido en la variable `egreso` de `Makers/main.py`. El programa imprime:
+`main.py` pasa cada transacción por `procesar_movimiento` (`Pipeline/pipeline.py`), que es el flujo principal: los tests y `ejecutar_casos.py` usan esa misma función. Imprime el resultado revisado y lo guarda en `datos/movimientos.db`.
 
-1. El resultado de la extracción.
-2. El resultado anonimizado.
-3. El resultado revisado por Groq.
+| Opción | Uso |
+|---|---|
+| `--cliente` | Id del cliente. Obligatorio para guardar. |
+| `--extracto` | Id del extracto. Por defecto se genera uno a partir del texto, así que reprocesar la misma transacción reemplaza sus filas en lugar de duplicarlas. |
+| `--no-guardar` | Solo muestra el resultado. |
+| `--sin-rag` | Revisa la categoría sin ejemplos del RAG. |
+| `--listar` | Muestra los movimientos guardados del cliente. |
+
+Si una transacción falla, se muestra el error y se sigue con las demás. El código de salida es 1 si alguna falló.
 
 Si alguna validación falla, se detiene con un `ValueError` que enumera todos los errores encontrados.
 
@@ -256,17 +279,33 @@ cd Makers
 python ejecutar_casos.py
 ```
 
-Procesa los 5 casos de `Constantes/casos_prueba.py` con el flujo completo, muestra un DataFrame con una fila por movimiento y lo guarda en `datos/resultados_casos.csv`. Si un caso falla, no se detiene: el error queda en la columna `error` indicando la etapa (`[extraccion]` o `[revision]`).
+Procesa los 5 casos de `Constantes/casos_prueba.py` con el flujo completo, muestra un DataFrame con una fila por movimiento y lo guarda en `datos/resultados_casos.csv`. Si un caso falla, no se detiene: el error queda en la columna `error` indicando la etapa (`[extraccion]` o `[revision]`). La columna `ejemplos_rag` indica cuántos ejemplos recibió el revisor.
+
+Con `python ejecutar_casos.py --sin-rag` se ejecuta sin RAG y se guarda en `datos/resultados_casos_sin_rag.csv`, para comparar ambos resultados.
+
+### RAG del revisor de categoría
+
+El revisor recibe, para cada movimiento, hasta 3 ejemplos ya categorizados cuya similitud sea al menos 0.65. Deben ser del mismo tipo (ingreso/egreso). La base (`datos/rag_categorias.db`) empieza con los ejemplos semilla de `Constantes/ejemplos_categorias.py` y los embeddings se calculan con `bge-m3` la primera vez. Si Ollama o el modelo no están disponibles, el pipeline muestra un aviso y revisa sin ejemplos.
+
+```bash
+cd Makers
+python rag.py indexar                                              # crea la base y calcula los embeddings
+python rag.py buscar "Suscripción mensual" --tipo egreso --contraparte Netflix
+python rag.py agregar "Pedido de mercado" --tipo egreso --contraparte Merqueo --categoria compras
+```
+
+Solo deben agregarse ejemplos cuya categoría haya confirmado una persona, porque el revisor tiende a copiar lo que encuentra en la base, incluidos los errores.
 
 ### Ejecutar los tests
 
 Desde la **raíz** del proyecto:
 
 ```bash
-pytest -v
+pytest -v                  # todos
+pytest -m "not llm" -v     # solo los unitarios: rápidos, sin Ollama ni Groq
 ```
 
-> ⚠️ Los tests llaman a Ollama y a Groq: requieren que Ollama esté en ejecución, una `GROQ_API_KEY` válida, y tardan entre 1 y 2 minutos.
+> ⚠️ Los tests de `test_casos.py` llaman a Ollama y a Groq: requieren que Ollama esté en ejecución, una `GROQ_API_KEY` válida, y tardan entre 1 y 2 minutos.
 
 #### ¿Qué sucede al ejecutar `pytest -v`?
 
@@ -558,13 +597,14 @@ PEGAR AQUÍ LA RESPUESTA REAL
 | Revisión de categoría con Groq | ✅ Funcional |
 | Validación del esquema y reglas de negocio | ✅ Implementada |
 | Validación de la revisión | ✅ Implementada |
-| Anonimización de nombres | 🟡 Parcial (no cubre descripción ni entidad) |
-| Persistencia en SQLite | 🟡 Implementada, no integrada en `main.py` |
+| Anonimización de nombres | 🟡 Cliente anonimizado también en la descripción; no cubre `entidad` ni otros nombres |
+| RAG de ejemplos para el revisor | ✅ Implementado (base semilla + ejemplos confirmados) |
+| Persistencia en SQLite | ✅ Integrada en `main.py` (no guarda `requiere_revision_humana` ni `motivo_revision`) |
 | Filtro de Prompt Injection por reglas | ❌ Pendiente |
 | Pruebas automatizadas (pytest, 5 casos) | ✅ Implementadas |
 | Evals con dataset amplio y métricas | ❌ Pendiente |
 | Resultados de las pruebas de Prompt Injection | ❌ Pendiente |
-| Entrada de datos real (CLI, archivo, PDF) | ❌ Pendiente (texto fijo en `main.py`) |
+| Entrada de datos real (CLI, archivo, PDF) | 🟡 CLI y archivo de texto; PDF pendiente |
 
 ---
 
@@ -572,9 +612,9 @@ PEGAR AQUÍ LA RESPUESTA REAL
 
 Problemas conocidos en el código actual:
 
-* [ ] **`anonimizar_movimiento` modifica el objeto original.** Trabaja sobre el mismo diccionario en lugar de una copia, por lo que `analisis` también queda anonimizado. Solución: `copy.deepcopy`.
-* [ ] **Anonimización incompleta.** `descripcion` puede contener nombres y se envía sin enmascarar a Groq.
-* [ ] **El revisor recibe nombres anonimizados.** Con `Net****` es más difícil deducir la categoría a partir del remitente.
+* [x] ~~`anonimizar_movimiento` modifica el objeto original~~: ahora trabaja sobre una copia (`copy.deepcopy`).
+* [x] ~~Anonimización incompleta en `descripcion`~~: los nombres de remitente y destinatario también se enmascaran en la descripción. Otros nombres que solo aparezcan en la descripción, o que estén en `entidad`, siguen sin enmascararse.
+* [x] ~~El revisor recibe nombres anonimizados~~: ahora solo se anonimiza al cliente y la contraparte llega completa.
 * [ ] **Parseo frágil de las respuestas.** `json.loads` falla si el modelo devuelve Markdown, texto adicional o bloques de razonamiento (`<think>` en Qwen3).
 * [ ] **Groq es obligatorio al importar.** `Modelos/consultas_llm.py` lanza error si falta `GROQ_API_KEY`, incluso si solo se quiere usar la extracción local.
 * [ ] **El almacenamiento no guarda** `requiere_revision_humana` ni `motivo_revision`, y `_CAMPOS_MOVIMIENTO` no se usa.
@@ -593,7 +633,7 @@ Problemas conocidos en el código actual:
 * [ ] Validación con **Pydantic** o JSON Schema.
 * [ ] Reintentos cuando la respuesta no es JSON válido.
 * [ ] Logging (`loguru`) en lugar de `print`.
-* [ ] Tests unitarios sin LLM para validaciones y anonimización (rápidos y deterministas).
+* [ ] Tests unitarios sin LLM para validaciones (anonimización y RAG ya los tienen).
 * [ ] Ejecutar cada caso varias veces y medir la tasa de acierto, en lugar de un único intento.
 * [ ] **Evals:** dataset de movimientos etiquetados y de ataques para medir exactitud y resistencia automáticamente.
 * [ ] Comparar diferentes modelos locales.
@@ -604,8 +644,8 @@ Problemas conocidos en el código actual:
 * [ ] Opción de revisión 100 % local (sin Groq).
 
 ### Funcionalidad
-* [ ] Integrar el almacenamiento SQLite en el flujo principal.
-* [ ] Entrada por línea de comandos o archivo.
+* [x] ~~Integrar el almacenamiento SQLite en el flujo principal.~~
+* [x] ~~Entrada por línea de comandos o archivo.~~
 * [ ] Extracción automática desde PDF y extractos bancarios completos.
 * [ ] Lectura de correos electrónicos de notificaciones bancarias.
 * [ ] Cola de revisión humana para los movimientos marcados.

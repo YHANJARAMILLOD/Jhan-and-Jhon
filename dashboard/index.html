@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estado de cuenta · Jhan y Jhon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Papel y tinta: el mundo de la factura impresa */
+  --papel:        #F5F2EA;
+  --papel-banda:  #EAE5D8;
+  --papel-borde:  #D6D0BF;
+  --tinta:        #1C1A16;
+  --tinta-media:  #5C564A;
+  --tinta-suave:  #6E6757;
+  --sello:        #1D4E6F;
+  --escritorio:   #DCD6C8;
+
+  /* Semántica del movimiento. Nunca va sola: siempre con signo. */
+  --ingreso:      #15663A;
+  --egreso:       #9E2B1E;
+
+  --sombra-hoja: 0 1px 2px rgba(28,26,22,.06), 0 12px 32px -12px rgba(28,26,22,.18);
+
+  --serie: 'Archivo', system-ui, sans-serif;
+  --estrecha: 'Archivo Narrow', 'Archivo', system-ui, sans-serif;
+
+  --paso-1: .75rem;
+  --paso-2: 1.25rem;
+  --paso-3: 2rem;
+  --paso-4: 3rem;
+  --paso-5: 4.5rem;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+.sr{
+  position:absolute; width:1px; height:1px;
+  padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+html{ -webkit-text-size-adjust:100%; }
+
+body{
+  margin:0;
+  background:var(--escritorio);
+  color:var(--tinta);
+  font-family:var(--serie);
+  font-size:16px;
+  line-height:1.5;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Superficies del navegador: también son parte del diseño */
+::selection{ background:var(--sello); color:var(--papel); }
+:focus-visible{ outline:2px solid var(--sello); outline-offset:3px; }
+@supports (scrollbar-color: auto){
+  html{ scrollbar-color:var(--papel-borde) var(--escritorio); scrollbar-width:thin; }
+}
+
+/* ───────────────────────── La hoja ───────────────────────── */
+
+.hoja{
+  max-width:74rem;
+  margin:0 auto;
+  background:var(--papel);
+  box-shadow:var(--sombra-hoja);
+  padding:var(--paso-4) var(--paso-4) var(--paso-5);
+  padding-top:calc(var(--paso-4) + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width:60rem){
+  body{ padding:var(--paso-4) var(--paso-3); }
+  .hoja{ padding:var(--paso-5) var(--paso-5) calc(var(--paso-5) * 1.3); }
+}
+
+@media (max-width:40rem){
+  .hoja{ padding:var(--paso-3) var(--paso-2) var(--paso-4); }
+}
+
+/* ───────────────────── Membrete ───────────────────── */
+
+.membrete{
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--paso-3);
+  justify-content:space-between;
+  align-items:flex-end;
+  padding-bottom:var(--paso-2);
+  border-bottom:2px solid var(--tinta);
+}
+
+.membrete__emisor{ min-width:0; }
+
+.membrete__marca{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  margin:0 0 .35rem;
+}
+
+.membrete__sello{
+  width:1.6rem; height:1.6rem;
+  flex:none;
+  color:var(--sello);
+}
+
+.membrete__nombre{
+  font-family:var(--estrecha);
+  font-size:.8rem;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--sello);
+  margin:0;
+}
+
+.membrete__titulo{
+  font-size:clamp(1.9rem, 1.2rem + 2.4vw, 2.9rem);
+  font-weight:700;
+  letter-spacing:-.022em;
+  line-height:1.04;
+  margin:0;
+  text-wrap:balance;
+}
+
+.membrete__periodo{
+  font-family:var(--estrecha);
+  font-size:1rem;
+  color:var(--tinta-media);
+  margin:.45rem 0 0;
+}
+
+/* Bloque de datos del documento, como el recuadro de una factura real */
+.documento{
+  display:grid;
+  grid-template-columns:auto auto;
+  gap:.2rem var(--paso-2);
+  font-family:var(--estrecha);
+  font-size:.82rem;
+  margin:0;
+  border-left:1px solid var(--papel-borde);
+  padding-left:var(--paso-2);
+}
+
+.documento dt{
+  color:var(--tinta-suave);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.documento dd{
+  margin:0;
+  text-align:right;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+}
+
+@media (max-width:40rem){
+  .membrete{ align-items:flex-start; gap:var(--paso-2); }
+  .documento{ border-left:0; padding-left:0; border-top:1px solid var(--papel-borde); padding-top:.75rem; width:100%; grid-template-columns:auto 1fr; }
+}
+
+/* ───────────────────── Liquidación ───────────────────── */
+
+.liquidacion{
+  margin-top:var(--paso-4);
+}
+
+.liquidacion__titulo{
+  font-family:var(--estrecha);
+  font-size:.78rem;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--tinta-media);
+  margin:0 0 var(--paso-2);
+}
+
+.renglon{
+  display:flex;
+  align-items:baseline;
+  gap:.75rem;
+  padding:.62rem 0;
+  border-bottom:1px solid var(--papel-borde);
+}
+
+.renglon__concepto{
+  font-size:1.02rem;
+  flex:none;
+}
+
+.renglon__guia{
+  flex:1 1 auto;
+  min-width:1.5rem;
+  border-bottom:1px dotted var(--papel-borde);
+  transform:translateY(-.28em);
+}
+
+.renglon__monto{
+  flex:none;
+  font-variant-numeric:tabular-nums;
+  font-size:1.1rem;
+  font-weight:500;
+  letter-spacing:-.01em;
+  white-space:nowrap;
+}
+
+.renglon__n{
+  font-family:var(--estrecha);
+  font-size:.78rem;
+  color:var(--tinta-suave);
+  flex:none;
+}
+
+.signo{ font-weight:600; }
+.monto--ingreso .signo{ color:var(--ingreso); }
+.monto--egreso  .signo{ color:var(--egreso); }
+
+/* La caja del total: el gesto monumental de la factura */
+.total{
+  margin-top:var(--paso-3);
+  border:2.5px solid var(--tinta);
+  background:var(--papel-banda);
+  padding:var(--paso-2) var(--paso-3);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:.5rem var(--paso-3);
+}
+
+.total__etiqueta{
+  font-family:var(--estrecha);
+  font-size:.92rem;
+  font-weight:700;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  margin:0;
+}
+
+.total__cifra{
+  font-size:clamp(2.4rem, 1.2rem + 4.4vw, 4rem);
+  font-weight:700;
+  letter-spacing:-.035em;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  margin:0;
+}
+
+.total__cifra .signo{ margin-right:.06em; }
+.total--positivo .total__cifra{ color:var(--ingreso); }
+.total--negativo .total__cifra{ color:var(--egreso); }
+
+.total__nota{
+  flex-basis:100%;
+  font-family:var(--estrecha);
+  font-size:.84rem;
+  color:var(--tinta-media);
+  margin:.35rem 0 0;
+}
+
+@media (max-width:40rem){
+  .total{ padding:var(--paso-2); }
+  .renglon__concepto{ font-size:.95rem; }
+  .renglon__monto{ font-size:1rem; }
+}
+
+/* Muy estrecho: la cifra no cabe junto a su etiqueta, así que se apila a
+   propósito en vez de envolver y quedar empujada a la derecha. */
+@media (max-width:30rem){
+  .total{ flex-direction:column; align-items:flex-start; gap:.35rem; }
+  .renglon__n{ display:none; }
+}
+
+/* ───────────────────── Desglose por categoría ───────────────────── */
+
+.bloque{ margin-top:var(--paso-5); }
+
+.bloque__titulo{
+  font-family:var(--estrecha);
+  font-size:.78rem;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--tinta-media);
+  margin:0 0 var(--paso-1);
+}
+
+.bloque__nota{
+  font-family:var(--estrecha);
+  font-size:.86rem;
+  color:var(--tinta-media);
+  margin:0 0 var(--paso-2);
+  max-width:64ch;
+}
+
+.detalle{ --cols:minmax(7.5rem,11rem) 1fr 3.2rem auto; }
+
+/* Encabezado de columnas: el recurso con el que una factura evita repetir la
+   unidad en cada renglón. */
+.detalle__encabezado{
+  display:grid;
+  grid-template-columns:var(--cols);
+  align-items:end;
+  column-gap:var(--paso-2);
+  padding:0 .5rem .4rem 0;
+  border-bottom:1px solid var(--tinta);
+  font-family:var(--estrecha);
+  font-size:.7rem;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--tinta-suave);
+}
+
+.detalle__encabezado span:nth-child(3),
+.detalle__encabezado span:nth-child(4){ text-align:right; }
+
+.detalle__fila{
+  display:grid;
+  grid-template-columns:var(--cols);
+  align-items:center;
+  column-gap:var(--paso-2);
+  padding:.42rem .5rem;
+  padding-left:0;
+  border-bottom:1px solid var(--papel-borde);
+  transition:background-color .12s ease-out;
+}
+
+.detalle__fila:hover{ background:var(--papel-banda); }
+
+.detalle__nombre{
+  font-size:.98rem;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+
+.detalle__medida{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  min-width:0;
+}
+
+/* Barra impresa: extremos rectos, tinta sólida. Una factura no redondea. */
+.barra{
+  flex:1 1 auto;
+  height:.72rem;
+  background:var(--papel-banda);
+  min-width:2rem;
+}
+
+.barra__relleno{
+  display:block;
+  height:100%;
+  background:var(--sello);
+}
+
+.detalle__pct{
+  font-family:var(--estrecha);
+  font-size:.82rem;
+  color:var(--tinta-media);
+  font-variant-numeric:tabular-nums;
+  flex:none;
+  width:3.2rem;
+  text-align:right;
+}
+
+.detalle__n{
+  text-align:right;
+  font-family:var(--estrecha);
+  font-size:.84rem;
+  color:var(--tinta-media);
+  font-variant-numeric:tabular-nums;
+}
+
+.detalle__monto{
+  text-align:right;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+  font-size:1.02rem;
+  font-weight:500;
+  letter-spacing:-.01em;
+}
+
+.detalle__total{
+  display:grid;
+  grid-template-columns:var(--cols);
+  column-gap:var(--paso-2);
+  padding:.6rem .5rem 0 0;
+  font-family:var(--estrecha);
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  font-size:.76rem;
+}
+
+.detalle__total span:nth-child(3){
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+  font-size:.84rem;
+}
+
+.detalle__total span:last-child{
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em;
+  text-transform:none;
+  font-size:1.02rem;
+}
+
+@media (max-width:48rem){
+  .detalle{ --cols:1fr auto; }
+  .detalle__encabezado span:nth-child(2),
+  .detalle__encabezado span:nth-child(3){ display:none; }
+  .detalle__fila{ row-gap:.35rem; padding:.55rem .5rem .55rem 0; }
+  .detalle__medida{ grid-column:1 / -1; order:3; }
+  .detalle__nombre{ order:1; }
+  .detalle__monto{ order:2; }
+  .detalle__n{ display:none; }
+  .detalle__total span:nth-child(2),
+  .detalle__total span:nth-child(3){ display:none; }
+}
+
+/* ───────────────── Lectura redactada por el modelo ───────────────── */
+
+.lectura{
+  margin-top:var(--paso-3);
+  background:var(--papel-banda);
+  border-top:2px solid var(--sello);
+  padding:var(--paso-2) var(--paso-3) var(--paso-3);
+}
+
+.lectura__titulo{
+  font-family:var(--estrecha);
+  font-size:.78rem;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--sello);
+  margin:0 0 .15rem;
+}
+
+.lectura__origen{
+  font-family:var(--estrecha);
+  font-size:.8rem;
+  color:var(--tinta-media);
+  margin:0 0 var(--paso-2);
+  max-width:70ch;
+}
+
+.lectura__cuerpo p{
+  margin:0 0 .85rem;
+  max-width:70ch;
+  line-height:1.62;
+}
+
+.lectura__cuerpo p:last-child{ margin-bottom:0; }
+
+/* El texto se queda en su medida de lectura; el encabezado ocupa la columna
+   que sobra en vez de dejar media banda vacía. */
+@media (min-width:60rem){
+  .lectura{
+    display:grid;
+    grid-template-columns:13rem 1fr;
+    /* La tercera fila absorbe el alto sobrante: sin ella la nota de
+       procedencia se separa de su título al estirarse el cuerpo. */
+    grid-template-rows:auto auto 1fr;
+    column-gap:var(--paso-3);
+  }
+  .lectura__titulo{ grid-column:1; grid-row:1; }
+  .lectura__origen{ grid-column:1; grid-row:2; margin-bottom:0; }
+  .lectura__cuerpo{ grid-column:2; grid-row:1 / -1; }
+}
+
+@media (max-width:40rem){
+  .lectura{ padding:var(--paso-2); }
+}
+
+/* ───────────────── Lo que conviene revisar ───────────────── */
+
+.marcado{
+  border-top:1px solid var(--tinta);
+}
+
+.marcado__item{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:.3rem var(--paso-2);
+  padding:.85rem 0;
+  border-bottom:1px solid var(--papel-borde);
+}
+
+.marcado__desc{
+  font-size:1rem;
+  margin:0;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+
+.marcado__monto{
+  font-variant-numeric:tabular-nums;
+  font-size:1.02rem;
+  font-weight:500;
+  white-space:nowrap;
+  text-align:right;
+  letter-spacing:-.01em;
+}
+
+.marcado__monto--ingreso .signo{ color:var(--ingreso); }
+.marcado__monto--egreso .signo{ color:var(--egreso); }
+
+.marcado__meta{
+  grid-column:1 / -1;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:.35rem .8rem;
+  font-family:var(--estrecha);
+  font-size:.84rem;
+  color:var(--tinta-media);
+}
+
+.marcado__fecha{
+  font-variant-numeric:tabular-nums;
+  color:var(--tinta-suave);
+}
+
+.motivo{
+  display:inline-block;
+  border:1px solid var(--sello);
+  color:var(--sello);
+  padding:.06rem .45rem;
+  font-size:.78rem;
+  line-height:1.5;
+}
+
+.marcado__razon{
+  grid-column:1 / -1;
+  margin:.15rem 0 0;
+  font-size:.92rem;
+  color:var(--tinta-media);
+  max-width:70ch;
+}
+
+/* ───────────────────── Evolución por periodo ───────────────────── */
+
+.evolucion{ border-top:1px solid var(--tinta); }
+
+.periodo{
+  padding:var(--paso-2) 0;
+  border-bottom:1px solid var(--papel-borde);
+}
+
+.periodo__cab{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:.3rem var(--paso-2);
+  margin-bottom:.7rem;
+}
+
+.periodo__mes{
+  font-size:1.05rem;
+  font-weight:600;
+  letter-spacing:-.012em;
+  margin:0;
+  text-transform:capitalize;
+}
+
+.periodo__balance{
+  margin:0;
+  font-variant-numeric:tabular-nums;
+  font-size:1.05rem;
+  font-weight:600;
+  letter-spacing:-.015em;
+  white-space:nowrap;
+}
+
+.periodo__balance small{
+  font-family:var(--estrecha);
+  font-size:.72rem;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--tinta-suave);
+  margin-right:.5rem;
+}
+
+/* Ancho fijo para la cifra: sin esto la etiqueta BALANCE se desplaza de un mes
+   a otro según cuántos dígitos tenga el número. */
+.periodo__cifra{
+  display:inline-block;
+  min-width:10ch;
+  text-align:right;
+}
+
+.periodo__balance--positivo{ color:var(--ingreso); }
+.periodo__balance--negativo{ color:var(--egreso); }
+
+.periodo__linea{
+  display:grid;
+  grid-template-columns:5.5rem 1fr auto;
+  align-items:center;
+  column-gap:var(--paso-2);
+  padding:.2rem 0;
+}
+
+.periodo__etiqueta{
+  font-family:var(--estrecha);
+  font-size:.84rem;
+  color:var(--tinta-media);
+}
+
+.periodo__valor{
+  font-variant-numeric:tabular-nums;
+  font-size:.98rem;
+  white-space:nowrap;
+  text-align:right;
+}
+
+.barra__relleno--ingreso{ background:var(--ingreso); }
+.barra__relleno--egreso{ background:var(--egreso); }
+
+@media (max-width:34rem){
+  .periodo__linea{ grid-template-columns:4.4rem 1fr auto; column-gap:.7rem; }
+  .periodo__valor{ font-size:.9rem; }
+  .periodo__etiqueta{ font-size:.78rem; }
+}
+
+/* ───────────────────── Estados ───────────────────── */
+
+.aviso{
+  max-width:44rem;
+  margin:var(--paso-5) auto;
+  background:var(--papel);
+  border:1px solid var(--papel-borde);
+  border-top:3px solid var(--sello);
+  padding:var(--paso-3);
+  box-shadow:var(--sombra-hoja);
+}
+
+.aviso h2{
+  font-size:1.15rem;
+  margin:0 0 .6rem;
+  letter-spacing:-.015em;
+}
+
+.aviso p{ margin:0 0 .8rem; color:var(--tinta-media); max-width:68ch; }
+.aviso p:last-child{ margin-bottom:0; }
+
+.aviso code{
+  font-family:var(--estrecha);
+  background:var(--papel-banda);
+  border:1px solid var(--papel-borde);
+  padding:.14em .45em;
+  font-size:.92em;
+  white-space:nowrap;
+}
+
+.cargando{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  font-family:var(--estrecha);
+  color:var(--tinta-media);
+  padding:var(--paso-5) 0;
+  justify-content:center;
+}
+
+.cargando::before{
+  content:"";
+  width:.9rem; height:.9rem;
+  border:2px solid var(--papel-borde);
+  border-top-color:var(--sello);
+  border-radius:50%;
+  animation:girar .7s linear infinite;
+}
+
+@keyframes girar{ to{ transform:rotate(360deg); } }
+
+/* Entrada: un solo momento, desde un estado ya visible */
+.hoja{ animation:asentar .5s cubic-bezier(.16,1,.3,1) both; }
+@keyframes asentar{
+  from{ opacity:.4; transform:translateY(6px); }
+  to{ opacity:1; transform:none; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
+</style>
+</head>
+<body>
+<!--
+  THESIS: El estado de cuenta como la factura mensual que el titular ya sabe leer.
+  Rechaza la rejilla de tarjetas de KPI flotantes y la dona de categorías.
+  OWN-WORLD: Papel cálido sobre escritorio, tinta oficial, sello azul de membrete,
+  cajas reguladas con guías punteadas, Archivo y Archivo Narrow, cifras tabulares,
+  caja del total con borde grueso.
+  STORY: El titular ve la aritmética del periodo resolverse en un balance, luego a
+  dónde se fue el dinero, y por último qué no pudo clasificar el sistema.
+  FIRST VIEWPORT: Membrete con titular y periodo sobre regla gruesa; la liquidación
+  plantea ingresos menos egresos como resta visible y desemboca en la caja del
+  balance a escala monumental.
+  FORM: La Factura, candidato 1 de mi lista ordenada, fijado por el usuario sobre el
+  candidato 3 del roll; seed 9141aa27.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish
+  review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+
+<div id="raiz">
+  <p class="cargando">Cargando estado de cuenta…</p>
+</div>
+
+<script>
+const FORMATO = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+const nombrarPeriodo = (clave) => {
+  if (clave === 'sin_fecha') return 'sin fecha';
+  const [anio, mes] = clave.split('-');
+  return mes ? `${MESES[Number(mes) - 1]} ${anio}` : anio;
+};
+
+const rangoPeriodos = (periodos) => {
+  const fechados = periodos.filter(p => p.periodo !== 'sin_fecha').map(p => p.periodo).sort();
+  if (!fechados.length) return 'Sin periodo fechado';
+  const inicio = nombrarPeriodo(fechados[0]);
+  const fin = nombrarPeriodo(fechados[fechados.length - 1]);
+  return inicio === fin ? inicio : `${inicio} — ${fin}`;
+};
+
+const escapar = (valor) => String(valor ?? '').replace(/[&<>"']/g, (c) => (
+  { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+));
+
+// Las categorías llegan en el formato del pipeline; aquí se leen en español.
+const CATEGORIAS = {
+  alimentacion: 'Alimentación',
+  transporte: 'Transporte',
+  entretenimiento: 'Entretenimiento',
+  vivienda: 'Vivienda',
+  salud: 'Salud',
+  educacion: 'Educación',
+  compras: 'Compras',
+  servicios: 'Servicios',
+  transferencia_persona: 'Transferencia a persona',
+  ingreso_laboral: 'Ingreso laboral',
+  otros: 'Otros'
+};
+
+const nombrarCategoria = (clave) => CATEGORIAS[clave] ?? String(clave ?? '—').replace(/_/g, ' ');
+
+const PORCENTAJE = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/*
+  Los motivos llegan con la clave técnica del pipeline. "datos_insuficientes"
+  no le dice nada al titular, así que cada uno se traduce a una etiqueta corta
+  y a una explicación de qué pasó en realidad.
+*/
+const MOTIVOS = {
+  datos_insuficientes: {
+    etiqueta: 'Faltan datos',
+    razon: 'El texto del extracto no traía suficiente información para clasificarlo con certeza.'
+  },
+  moneda_no_especificada: {
+    etiqueta: 'Moneda sin especificar',
+    razon: 'El movimiento no decía en qué moneda estaba, así que no se asumió ninguna.'
+  },
+  formato_numerico_ambiguo: {
+    etiqueta: 'Monto ambiguo',
+    razon: 'El número podía leerse de más de una forma (por ejemplo, si el punto separaba miles o decimales).'
+  },
+  posible_duplicado: {
+    etiqueta: 'Posible repetido',
+    razon: 'Aparece otro movimiento casi idéntico en el mismo extracto. No se eliminó ninguno: puede que ambos sean reales.'
+  },
+  posible_intento_de_manipulacion: {
+    etiqueta: 'Texto sospechoso',
+    razon: 'El texto contenía instrucciones dirigidas al sistema. Se ignoraron y solo se analizó el movimiento.'
+  }
+};
+
+const leerMotivos = (cadena) => String(cadena ?? '')
+  .split(',')
+  .map(m => m.trim())
+  .filter(Boolean)
+  .map(clave => MOTIVOS[clave] ?? { etiqueta: clave.replace(/_/g, ' '), razon: '' });
+
+const fechaCorta = (iso) => {
+  if (!iso) return 'Sin fecha';
+  const [anio, mes, dia] = iso.split('-');
+  return `${Number(dia)} ${MESES[Number(mes) - 1]?.slice(0, 3) ?? ''} ${anio}`;
+};
+
+// La contraparte cambia de campo según el tipo: en un egreso es el
+// destinatario, en un ingreso el remitente. El otro campo lleva al titular
+// enmascarado, así que elegir mal mostraría asteriscos en media tabla.
+const contraparte = (m) => (m.tipo === 'ingreso' ? m.nombre_remitente : m.nombre_destinatario) || m.entidad || null;
+
+const cifra = (monto, signo) => `<span class="signo">${signo}</span>${FORMATO.format(Math.abs(monto))}`;
+
+function renglon(concepto, monto, signo, clase, n) {
+  return `
+    <div class="renglon">
+      <span class="renglon__concepto">${escapar(concepto)}</span>
+      ${n != null ? `<span class="renglon__n">${n} ${n === 1 ? 'movimiento' : 'movimientos'}</span>` : ''}
+      <span class="renglon__guia" aria-hidden="true"></span>
+      <span class="renglon__monto ${clase}">${cifra(monto, signo)}</span>
+    </div>`;
+}
+
+function liquidacion(total, moneda, sinFecha) {
+  const positivo = total.balance >= 0;
+  const nota = sinFecha
+    ? `${sinFecha} ${sinFecha === 1 ? 'movimiento quedó' : 'movimientos quedaron'} fuera del análisis por periodo: no traen fecha. Sus montos sí están sumados arriba.`
+    : '';
+
+  return `
+    <section class="liquidacion" aria-labelledby="tit-liquidacion">
+      <h2 class="liquidacion__titulo" id="tit-liquidacion">Liquidación del periodo · ${escapar(moneda)}</h2>
+      ${renglon('Ingresos', total.ingresos, '+', 'monto--ingreso')}
+      ${renglon('Egresos', total.egresos, '−', 'monto--egreso')}
+      <div class="total ${positivo ? 'total--positivo' : 'total--negativo'}">
+        <h3 class="total__etiqueta">Balance neto</h3>
+        <p class="total__cifra">${cifra(total.balance, positivo ? '+' : '−')}</p>
+        ${nota ? `<p class="total__nota">${escapar(nota)}</p>` : ''}
+      </div>
+    </section>`;
+}
+
+/*
+  Barras de una sola tinta a propósito: las diez categorías se distinguen por su
+  nombre, no por color. Diez tonos distintos no codificarían nada que la etiqueta
+  no diga ya, y dejarían verde y rojo sin su único significado, que es la
+  dirección del movimiento. El ancho es proporcional al mayor del grupo.
+*/
+function desglose(categorias, titulo, nota, idTitulo) {
+  if (!categorias?.length) return '';
+
+  const mayor = Math.max(...categorias.map(c => c.total));
+  const suma = categorias.reduce((acc, c) => acc + c.total, 0);
+
+  const filas = categorias.map((c) => {
+    const ancho = mayor > 0 ? (c.total / mayor) * 100 : 0;
+    const pct = c.porcentaje != null ? `${PORCENTAJE.format(c.porcentaje)}%` : '';
+    return `
+      <div class="detalle__fila">
+        <span class="detalle__nombre">${escapar(nombrarCategoria(c.categoria))}</span>
+        <span class="detalle__medida">
+          <span class="barra" role="img" aria-label="${escapar(pct)} del total">
+            <span class="barra__relleno" style="width:${ancho.toFixed(2)}%"></span>
+          </span>
+          <span class="detalle__pct">${escapar(pct)}</span>
+        </span>
+        <span class="detalle__n">${c.n_movimientos}<span class="sr"> ${c.n_movimientos === 1 ? 'movimiento' : 'movimientos'}</span></span>
+        <span class="detalle__monto">${FORMATO.format(c.total)}</span>
+      </div>`;
+  }).join('');
+
+  const totalMovs = categorias.reduce((acc, c) => acc + c.n_movimientos, 0);
+
+  return `
+    <section class="bloque" aria-labelledby="${idTitulo}">
+      <h2 class="bloque__titulo" id="${idTitulo}">${escapar(titulo)}</h2>
+      ${nota ? `<p class="bloque__nota">${escapar(nota)}</p>` : ''}
+      <div class="detalle">
+        <div class="detalle__encabezado" aria-hidden="true">
+          <span>Categoría</span>
+          <span>Participación</span>
+          <span>Movs.</span>
+          <span>Valor</span>
+        </div>
+        ${filas}
+        <div class="detalle__total">
+          <span>Total</span>
+          <span></span>
+          <span>${totalMovs}</span>
+          <span>${FORMATO.format(suma)}</span>
+        </div>
+      </div>
+    </section>`;
+}
+
+/*
+  Las barras comparten una escala única entre todos los meses: si cada periodo
+  se escalara a su propio máximo, meses muy distintos se verían iguales.
+  Ingresos y egresos llevan etiqueta escrita, así que la identidad nunca depende
+  solo del color y no hace falta una caja de leyenda aparte.
+*/
+function evolucion(periodos, moneda) {
+  const propios = periodos.filter(p => p.moneda === moneda);
+  if (propios.length < 2) return '';
+
+  const tope = Math.max(...propios.flatMap(p => [p.ingresos, p.egresos]));
+
+  const linea = (etiqueta, monto, clase, contexto) => {
+    const ancho = tope > 0 ? (monto / tope) * 100 : 0;
+    return `
+      <div class="periodo__linea">
+        <span class="periodo__etiqueta">${etiqueta}</span>
+        <span class="barra" role="img" aria-label="${etiqueta} de ${contexto}: ${FORMATO.format(monto)} ${escapar(moneda)}">
+          <span class="barra__relleno barra__relleno--${clase}" style="width:${ancho.toFixed(2)}%"></span>
+        </span>
+        <span class="periodo__valor">${FORMATO.format(monto)}</span>
+      </div>`;
+  };
+
+  const bloques = propios.map((p) => {
+    const nombre = nombrarPeriodo(p.periodo);
+    const positivo = p.balance >= 0;
+    return `
+      <article class="periodo">
+        <header class="periodo__cab">
+          <h3 class="periodo__mes">${escapar(nombre)}</h3>
+          <p class="periodo__balance ${positivo ? 'periodo__balance--positivo' : 'periodo__balance--negativo'}">
+            <small>Balance</small><span class="periodo__cifra"><span class="signo">${positivo ? '+' : '−'}</span>${FORMATO.format(Math.abs(p.balance))}</span>
+          </p>
+        </header>
+        ${linea('Ingresos', p.ingresos, 'ingreso', nombre)}
+        ${linea('Egresos', p.egresos, 'egreso', nombre)}
+      </article>`;
+  }).join('');
+
+  return `
+    <section class="bloque" aria-labelledby="tit-evolucion">
+      <h2 class="bloque__titulo" id="tit-evolucion">Evolución del periodo</h2>
+      <p class="bloque__nota">Todas las barras comparten la misma escala, así que su largo es comparable entre meses.</p>
+      <div class="evolucion">${bloques}</div>
+    </section>`;
+}
+
+function lectura(texto) {
+  if (!texto) return '';
+  const parrafos = texto.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+
+  return `
+    <section class="lectura" aria-labelledby="tit-lectura">
+      <h2 class="lectura__titulo" id="tit-lectura">Lectura del periodo</h2>
+      <p class="lectura__origen">Redactada automáticamente a partir de las cifras de este estado. El modelo escribe el texto; no calcula ninguna cantidad.</p>
+      <div class="lectura__cuerpo">${parrafos.map(p => `<p>${escapar(p)}</p>`).join('')}</div>
+    </section>`;
+}
+
+function itemMarcado(m, extra) {
+  const esIngreso = m.tipo === 'ingreso';
+  const quien = contraparte(m);
+  const motivos = leerMotivos(m.motivo_revision);
+
+  return `
+    <div class="marcado__item">
+      <p class="marcado__desc">${escapar(m.descripcion || 'Movimiento sin descripción')}</p>
+      <span class="marcado__monto ${esIngreso ? 'marcado__monto--ingreso' : 'marcado__monto--egreso'}">
+        <span class="signo">${esIngreso ? '+' : '−'}</span>${FORMATO.format(Math.abs(m.monto ?? 0))}${m.moneda ? ' ' + escapar(m.moneda) : ''}
+      </span>
+      <div class="marcado__meta">
+        <span class="marcado__fecha">${escapar(fechaCorta(m.fecha))}</span>
+        ${quien ? `<span>${escapar(quien)}</span>` : ''}
+        ${m.categoria ? `<span>${escapar(nombrarCategoria(m.categoria))}</span>` : ''}
+        ${motivos.map(mo => `<span class="motivo">${escapar(mo.etiqueta)}</span>`).join('')}
+      </div>
+      ${extra ? `<p class="marcado__razon">${extra}</p>`
+              : motivos.filter(mo => mo.razon).map(mo => `<p class="marcado__razon">${escapar(mo.razon)}</p>`).join('')}
+    </div>`;
+}
+
+function inusuales(anomalias) {
+  if (!anomalias?.length) return '';
+
+  const items = anomalias.map((a) => {
+    const razon = `Es ${escapar(String(a.veces_la_media).replace('.', ','))} veces el promedio de los ${a.tipo === 'ingreso' ? 'ingresos' : 'egresos'} de este titular. Que sea inusual no significa que esté mal: puede ser una compra grande perfectamente normal.`;
+    return itemMarcado({ ...a, motivo_revision: null }, razon);
+  }).join('');
+
+  return `
+    <section class="bloque" aria-labelledby="tit-inusuales">
+      <h2 class="bloque__titulo" id="tit-inusuales">Movimientos fuera de lo habitual</h2>
+      <p class="bloque__nota">Comparados con el comportamiento propio de este titular, no con un promedio general.</p>
+      <div class="marcado">${items}</div>
+    </section>`;
+}
+
+function paraRevision(movimientos) {
+  if (!movimientos?.length) {
+    return `
+      <section class="bloque" aria-labelledby="tit-revision">
+        <h2 class="bloque__titulo" id="tit-revision">Clasificación incierta</h2>
+        <p class="bloque__nota">Ningún movimiento de este periodo quedó pendiente de revisión: el sistema pudo clasificarlos todos con la información disponible.</p>
+      </section>`;
+  }
+
+  return `
+    <section class="bloque" aria-labelledby="tit-revision">
+      <h2 class="bloque__titulo" id="tit-revision">Clasificación incierta</h2>
+      <p class="bloque__nota">El sistema marcó ${movimientos.length === 1 ? 'este movimiento' : `estos ${movimientos.length} movimientos`} porque no pudo clasificarlos con certeza. Prefiere decirlo a inventar el dato que falta.</p>
+      <div class="marcado">${movimientos.map(m => itemMarcado(m)).join('')}</div>
+    </section>`;
+}
+
+function membrete(datos, total) {
+  const generado = new Date(datos.generado);
+  const fechaLegible = `${generado.getDate()} ${MESES[generado.getMonth()]} ${generado.getFullYear()}`;
+
+  return `
+    <header class="membrete">
+      <div class="membrete__emisor">
+        <div class="membrete__marca">
+          <svg class="membrete__sello" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <rect x="4" y="2.5" width="16" height="19" rx="1"/>
+            <path d="M8 8h8M8 12h8M8 16h5"/>
+          </svg>
+          <p class="membrete__nombre">Jhan y Jhon</p>
+        </div>
+        <h1 class="membrete__titulo">Estado de cuenta</h1>
+        <p class="membrete__periodo">${escapar(rangoPeriodos(datos.periodos))}</p>
+      </div>
+      <dl class="documento">
+        <dt>Titular</dt><dd>${escapar(datos.cliente_id)}</dd>
+        <dt>Movimientos</dt><dd>${total.n_movimientos}</dd>
+        <dt>Moneda</dt><dd>${escapar(datos.moneda_principal ?? '—')}</dd>
+        <dt>Emitido</dt><dd>${escapar(fechaLegible)}</dd>
+      </dl>
+    </header>`;
+}
+
+function avisoOtrasMonedas(totales) {
+  if (totales.length < 2) return '';
+  const otras = totales.slice(1).map(t => t.moneda).join(', ');
+  return `<p class="total__nota">Este estado liquida ${escapar(totales[0].moneda)}. Hay movimientos en ${escapar(otras)} que no se suman aquí: mezclar monedas daría una cifra sin significado.</p>`;
+}
+
+function render(datos) {
+  const total = datos.totales?.[0];
+  if (!total) return mostrarAviso('Sin movimientos', '<p>Este estado de cuenta no tiene movimientos para mostrar.</p>');
+
+  document.getElementById('raiz').innerHTML = `
+    <main class="hoja">
+      ${membrete(datos, total)}
+      ${liquidacion(total, total.moneda, datos.movimientos_sin_fecha)}
+      ${avisoOtrasMonedas(datos.totales)}
+      ${lectura(datos.resumen_texto)}
+      ${evolucion(datos.periodos, total.moneda)}
+      ${desglose(datos.categorias_egreso, 'A dónde se fue el dinero', 'Ordenado por monto. La barra compara cada categoría con la mayor del periodo.', 'tit-egresos')}
+      ${desglose(datos.categorias_ingreso, 'De dónde vino el dinero', null, 'tit-ingresos')}
+      ${inusuales(datos.anomalias)}
+      ${paraRevision(datos.para_revision)}
+    </main>`;
+
+  document.title = `Estado de cuenta · ${datos.cliente_id} · Jhan y Jhon`;
+}
+
+function mostrarAviso(titulo, cuerpoHtml) {
+  document.getElementById('raiz').innerHTML = `
+    <div class="aviso">
+      <h2>${escapar(titulo)}</h2>
+      ${cuerpoHtml}
+    </div>`;
+}
+
+fetch('./datos.json', { cache: 'no-store' })
+  .then((respuesta) => {
+    if (!respuesta.ok) throw new Error(`El servidor respondió ${respuesta.status}`);
+    return respuesta.json();
+  })
+  .then(render)
+  .catch((error) => {
+    const esProtocoloArchivo = location.protocol === 'file:';
+    mostrarAviso(
+      esProtocoloArchivo ? 'Hace falta servir la página' : 'No se pudo leer datos.json',
+      esProtocoloArchivo
+        ? `<p>El navegador bloquea la lectura de archivos locales cuando la página se abre con doble clic. Sirve la carpeta y ábrela desde ahí:</p>
+           <p><code>cd dashboard &amp;&amp; python -m http.server 8000</code></p>
+           <p>Luego entra a <code>http://localhost:8000</code>.</p>`
+        : `<p>${escapar(error.message)}.</p>
+           <p>Genera el archivo con <code>python main.py --exportar --cliente cliente_demo</code> desde la carpeta <code>Makers</code>.</p>`
+    );
+  });
+</script>
+</body>
+</html>
