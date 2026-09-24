@@ -2,7 +2,7 @@ import json
 import warnings
 from Prompts import principales_prompts, prompts_secundarios
 from Modelos.consultas_llm import extraer_movimiento, consulta_llm
-from Validaciones.validaciones import validate_financial_movement, validar_revision
+from Validaciones.validaciones import validate_financial_movement, validar_revision, normalizar_motivos
 from Anonimizacion.anonimizacion import anonimizar_movimiento
 from Recuperacion.recuperacion import recuperar_ejemplos, formatear_ejemplos
 
@@ -32,6 +32,9 @@ def procesar_movimiento(texto, usar_rag=True):
     """
     try:
         analisis = extraer_movimiento(movimiento=texto, prompt=principales_prompts.PROMPT_EXTRAER_MOVIMIENTO())
+        # El extractor a veces inventa motivos: se normalizan antes de validar
+        # para no descartar el movimiento completo por eso.
+        normalizar_motivos(analisis)
         validate_financial_movement(analisis, texto)
     except ValueError as error:
         raise ValueError(f"[extraccion] {error}") from error

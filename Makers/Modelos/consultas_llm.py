@@ -67,3 +67,27 @@ def consulta_llm(prompt1,prompt2, max_tokens=1000):
         raise ValueError("El revisor debe devolver una lista JSON de movimientos.")
 
     return movimientos
+
+
+def consulta_llm_texto(prompt1, prompt2, max_tokens=1000):
+    """
+    Igual que consulta_llm pero devuelve el texto tal cual, sin parsear JSON.
+
+    Se usa para la redacción del resumen, donde la salida esperada es prosa.
+    La temperatura sigue en 0: el resumen debe ser estable entre ejecuciones.
+    """
+    response = usuario.chat.completions.create(
+        model=MODELO_REVISION,
+        max_tokens=max_tokens,
+        temperature=0,
+        messages=[
+            {"role": "system", "content": prompt2},
+            {"role": "user", "content": prompt1}
+        ],
+    )
+    texto = response.choices[0].message.content.strip()
+
+    if not texto:
+        raise ValueError("El modelo devolvió un resumen vacío.")
+
+    return texto

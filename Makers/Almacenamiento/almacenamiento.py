@@ -6,18 +6,6 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent.parent.parent / "datos" / "movimientos.db"
 
-_CAMPOS_MOVIMIENTO = (
-    "nombre_remitente",
-    "tipo",
-    "categoria",
-    "monto",
-    "moneda",
-    "nombre_destinatario",
-    "entidad",
-    "fecha",
-    "descripcion",
-)
-
 
 def obtener_conexion(db_path=DB_PATH):
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -27,7 +15,7 @@ def obtener_conexion(db_path=DB_PATH):
 
 
 def inicializar_db(db_path=DB_PATH):
-    """Crea la tabla de movimientos si no existe."""
+    """Crea la tabla de movimientos si no existe y migra las bases antiguas."""
     conexion = obtener_conexion(db_path)
     conexion.execute(
         """
@@ -44,13 +32,23 @@ def inicializar_db(db_path=DB_PATH):
             nombre_destinatario TEXT,
             entidad TEXT,
             fecha TEXT,
-            descripcion TEXT
+            descripcion TEXT,
+            requiere_revision_humana INTEGER,
+            motivo_revision TEXT
         )
         """
     )
     conexion.execute(
         "CREATE INDEX IF NOT EXISTS idx_movimientos_cliente ON movimientos (cliente_id)"
     )
+
+    # Migración: las bases creadas antes de añadir el triage no tienen estas
+    # columnas y perdían la marca de revisión al guardar.
+    existentes = {fila["name"] for fila in conexion.execute("PRAGMA table_info(movimientos)")}
+    for columna, tipo_sql in (("requiere_revision_humana", "INTEGER"), ("motivo_revision", "TEXT")):
+        if columna not in existentes:
+            conexion.execute(f"ALTER TABLE movimientos ADD COLUMN {columna} {tipo_sql}")
+
     conexion.commit()
     conexion.close()
 
@@ -102,8 +100,9 @@ def guardar_movimientos(cliente_id, extracto_id, movimientos_anonimizados, db_pa
             INSERT OR REPLACE INTO movimientos (
                 movimiento_id, cliente_id, extracto_id, fecha_ingesta,
                 nombre_remitente, tipo, categoria, monto, moneda,
-                nombre_destinatario, entidad, fecha, descripcion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                nombre_destinatario, entidad, fecha, descripcion,
+                requiere_revision_humana, motivo_revision
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 movimiento_id,
@@ -119,6 +118,8 @@ def guardar_movimientos(cliente_id, extracto_id, movimientos_anonimizados, db_pa
                 datos.get("entidad"),
                 datos.get("fecha"),
                 datos.get("descripcion"),
+                int(bool(datos.get("requiere_revision_humana"))),
+                datos.get("motivo_revision"),
             ),
         )
         guardados += 1
@@ -130,10 +131,19 @@ def guardar_movimientos(cliente_id, extracto_id, movimientos_anonimizados, db_pa
 
 def obtener_movimientos_cliente(cliente_id, db_path=DB_PATH):
     """Devuelve todos los movimientos guardados de un cliente, ordenados por fecha."""
+    inicializar_db(db_path)
     conexion = obtener_conexion(db_path)
     filas = conexion.execute(
         "SELECT * FROM movimientos WHERE cliente_id = ? ORDER BY fecha",
         (cliente_id,),
     ).fetchall()
     conexion.close()
-    return [dict(fila) for fila in filas]
+
+    movimientos = []
+    for fila in filas:
+        datos = dict(fila)
+        # SQLite guarda el booleano como 0/1; se devuelve como bool.
+        if datos["requiere_revision_humana"] is not None:
+            datos["requiere_revision_humana"] = bool(datos["requiere_revision_humana"])
+        movimientos.append(datos)
+    return movimientos

@@ -1,5 +1,6 @@
 import json
 import re
+import warnings
 from datetime import datetime
 from Constantes.Principales_constantes import CATEGORIAS_PERMITIDAS, MONEDAS_PERMITIDAS, CAMPOS_MOVIMIENTO, MOTIVOS_REVISION_PERMITIDOS, TIPOS_PERMITIDOS, CAMPOS_TEXTO_OPCIONAL
 
@@ -9,6 +10,52 @@ CAMPOS_MOVIMIENTO = CAMPOS_MOVIMIENTO()
 MOTIVOS_REVISION_PERMITIDOS = MOTIVOS_REVISION_PERMITIDOS()
 TIPOS_PERMITIDOS = TIPOS_PERMITIDOS()
 CAMPOS_TEXTO_OPCIONAL = CAMPOS_TEXTO_OPCIONAL()
+
+
+def normalizar_motivos(output, motivo_por_defecto="datos_insuficientes"):
+    """
+    Reemplaza los motivos de revisión inventados por uno permitido.
+
+    El extractor ocasionalmente devuelve motivos fuera del conjunto permitido
+    (se ha visto "fecha_en_el_futuro"), lo que invalidaba el extracto completo
+    aunque el resto del movimiento fuera correcto. Se conserva la marca de
+    revisión y se sustituye el motivo: marcar de más es preferible a descartar
+    el movimiento.
+
+    Modifica y devuelve `output`. Debe llamarse antes de validar.
+    """
+    if not isinstance(output, list):
+        return output
+
+    for item in output:
+        if not isinstance(item, dict) or not item.get("es_movimiento_financiero"):
+            continue
+
+        datos = item.get("movimiento")
+        if not isinstance(datos, dict):
+            continue
+
+        motivo = datos.get("motivo_revision")
+        if not isinstance(motivo, str) or not motivo.strip():
+            continue
+
+        motivos = [m.strip() for m in motivo.split(",") if m.strip()]
+        desconocidos = [m for m in motivos if m not in MOTIVOS_REVISION_PERMITIDOS]
+        if not desconocidos:
+            continue
+
+        conservados = [m for m in motivos if m in MOTIVOS_REVISION_PERMITIDOS]
+        if motivo_por_defecto not in conservados:
+            conservados.append(motivo_por_defecto)
+
+        datos["motivo_revision"] = ",".join(conservados)
+        datos["requiere_revision_humana"] = True
+        warnings.warn(
+            f"Motivos de revisión no permitidos {desconocidos}: "
+            f"se marca para revisión con '{motivo_por_defecto}'."
+        )
+
+    return output
 
 
 def _validar_motivos(ubicacion, datos, errores):

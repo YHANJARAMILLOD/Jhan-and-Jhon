@@ -126,6 +126,30 @@ Makers/Pipeline/pipeline.py. La usan tanto main.py (uso real) como los tests
     y sirve como "segunda opinión" sobre la categoría.
 
 
+EL SEGUNDO FLUJO: EL RESUMEN (dashboard)
+
+Una vez hay movimientos guardados, un segundo flujo independiente arma el
+resumen del cliente. No vuelve a llamar al extractor ni reprocesa nada: lee
+lo que ya está en la base.
+
+    datos/movimientos.db
+        |
+        v
+    [1] AGREGACIÓN        SQL + Python calculan totales por periodo,
+        |                 categorías principales y anomalías.
+        |                 Agregacion/agregacion.py
+        v
+    [2] REDACCIÓN         gpt-oss-120b (Groq) recibe esas cifras ya
+        |                 calculadas y escribe el texto.
+        |                 Resumen/resumen.py
+        v
+    texto del resumen  -> main.py --resumen lo imprime.
+
+Regla clave: el LLM NO calcula. Todas las cifras salen de SQL, que es
+determinístico y auditable; el modelo solo las redacta. El prompt le
+prohíbe explícitamente inventar, estimar o recalcular cifras.
+
+
 -------------------------------------------------------------------------------
 4. ESTRUCTURA DE CARPETAS
 -------------------------------------------------------------------------------
@@ -138,7 +162,7 @@ Jhan-and-Jhon/
     README.md               documentación general
     docs/                   documentación (esta guía)
     datos/                  se crea solo; bases SQLite y CSV (NO va a git)
-        movimientos.db      movimientos procesados por cliente
+        movimientos.db      movimientos procesados por cliente (15 columnas)
         rag_categorias.db   base de ejemplos del RAG
     Makers/                 TODO el código
         main.py             punto de entrada (línea de comandos)
@@ -151,6 +175,8 @@ Jhan-and-Jhon/
         Anonimizacion/      ocultar nombres
         Recuperacion/       el RAG
         Almacenamiento/     guardar en SQLite
+        Agregacion/         totales, categorías y anomalías (SQL, sin IA)
+        Resumen/            redacción del resumen con Groq
         Pipeline/           el flujo completo
         Evaluacion/         ejecutar casos y armar tablas de resultados
         tests/              pruebas automáticas
@@ -172,6 +198,7 @@ Uso:
     python main.py "Pagué 45.900 COP a Netflix" --cliente cliente_001
     python main.py --archivo transacciones.txt --cliente cliente_001
     python main.py --listar --cliente cliente_001
+    python main.py --resumen --cliente cliente_001
     python main.py --help
 
 Opciones (se leen con argparse; "--no-guardar" pasa a ser args.no_guardar):
@@ -182,10 +209,15 @@ Opciones (se leen con argparse; "--no-guardar" pasa a ser args.no_guardar):
     --no-guardar  solo muestra el resultado
     --sin-rag     revisa la categoría sin ejemplos del RAG
     --listar      muestra lo guardado del cliente y termina
+    --resumen     genera el resumen del cliente y termina
+    --periodo     granularidad del resumen: "mes" (por defecto) o "anio"
+    --metricas    con --resumen, imprime también las cifras que recibió
+                  el LLM (sirve para comprobar que no inventó nada)
 
 Cómo decide qué hacer: argparse solo llena el objeto "args". Después, if
 normales en main() revisan esos valores:
     - if args.listar      -> muestra lo guardado y hace return (termina).
+    - if args.resumen     -> genera el resumen y hace return (termina).
     - validaciones        -> parser.error(...) si falta algo.
     - for cada texto      -> procesar_movimiento(texto, usar_rag=...).
     - if not no_guardar   -> guardar_movimientos(...) al final, agrupado
@@ -293,6 +325,20 @@ Objetivo: no confiar ciegamente en el LLM. Todo en Python normal.
         Valida requiere_revision_humana y motivo_revision. Los motivos
         pueden ir varios separados por coma.
 
+    normalizar_motivos(output)
+        Red de seguridad contra motivos inventados. El extractor a veces
+        devuelve motivos que no existen (se vio "fecha_en_el_futuro"), y
+        antes eso invalidaba el extracto entero aunque el resto estuviera
+        bien. Ahora el motivo desconocido se reemplaza por
+        "datos_insuficientes", se conservan los válidos que lo acompañen y
+        el movimiento queda marcado para revisión. Se llama en el pipeline
+        ANTES de validar. Emite un warning cuando actúa.
+
+        Se prefiere marcar de más antes que perder el movimiento. La
+        prevención está en las reglas 33 y 34 del prompt del extractor,
+        que enumeran los cinco motivos y prohíben inventar otros; esta
+        función solo atrapa lo que se escape.
+
     validar_revision(original, revisado)
         Comprueba que el revisor devolvió los mismos elementos, en el mismo
         orden, y que SOLO cambió "categoria".
@@ -385,8 +431,17 @@ Makers/rag.py - línea de comandos para probar el RAG:
 Objetivo: guardar los movimientos procesados por cliente y extracto en
 datos/movimientos.db (tabla "movimientos").
 
+La tabla tiene 15 columnas: los 11 campos del movimiento más cuatro de
+metadatos (movimiento_id, cliente_id, extracto_id, fecha_ingesta). Los
+metadatos no los produce el LLM: los aporta quien llama, porque saber a qué
+cliente pertenece un extracto es contexto, no algo que se deduzca del texto.
+
     obtener_conexion() / inicializar_db()
-        Abren la base y crean la tabla si no existe.
+        Abren la base y crean la tabla si no existe. inicializar_db también
+        migra: si encuentra una base creada antes de que existieran las
+        columnas requiere_revision_humana y motivo_revision, las agrega con
+        ALTER TABLE sin perder las filas existentes (las viejas quedan en
+        NULL). Comprueba qué columnas hay con PRAGMA table_info.
 
     _generar_movimiento_id(...)
         Id único (hash SHA-256) a partir del cliente, extracto, posición y
@@ -397,12 +452,79 @@ datos/movimientos.db (tabla "movimientos").
         nuevas. Así reprocesar un extracto lo reemplaza en vez de
         duplicarlo (el LLM puede redactar distinto la descripción y
         cambiaría el id). Solo guarda los elementos financieros.
+        requiere_revision_humana se guarda como 0/1, porque SQLite no
+        tiene tipo booleano.
 
     obtener_movimientos_cliente(cliente_id)
-        Devuelve lo guardado de un cliente, ordenado por fecha.
+        Devuelve lo guardado de un cliente, ordenado por fecha, con
+        requiere_revision_humana convertido de vuelta a True/False.
 
 
-5.9  Makers/Constantes/  -  VALORES FIJOS
+5.9  Makers/Agregacion/agregacion.py  -  LAS CIFRAS DEL RESUMEN
+.............................................................................
+Objetivo: calcular con SQL y Python todo lo que el resumen va a decir. Aquí
+no interviene ningún LLM: los números deben ser reproducibles.
+
+    resumen_por_periodo(cliente_id, granularidad="mes")
+        Ingresos, egresos y balance por periodo. "mes" agrupa por YYYY-MM y
+        "anio" por YYYY.
+
+    top_categorias(cliente_id, tipo="egreso", limite=5)
+        Categorías ordenadas por monto, con su peso porcentual sobre el
+        total de ese tipo y esa moneda.
+
+    detectar_anomalias(cliente_id, umbral_desviaciones=2.0)
+        Marca los montos que se alejan del comportamiento habitual del
+        cliente: compara cada monto con la media y la desviación estándar
+        de los movimientos del mismo tipo y moneda, y señala los que estén
+        a 2 desviaciones o más. Pide un histórico mínimo de 5 movimientos,
+        porque con menos la estadística no dice nada.
+
+    movimientos_para_revision(cliente_id)
+        Los que el pipeline marcó con requiere_revision_humana.
+
+    resumen_cliente(cliente_id)
+        Junta todo lo anterior en un diccionario. Es lo que recibe el LLM.
+
+Dos decisiones importantes:
+
+    MONEDAS: nunca se suman montos de monedas distintas. Cada agregación
+    devuelve una fila por moneda. Sumar COP con USD daría un número que
+    parece correcto y no significa nada.
+
+    SIN FECHA: los movimientos sin fecha no se descartan, van a un periodo
+    llamado "sin_fecha". Así el resumen puede decir cuántos quedaron fuera
+    del análisis temporal, en vez de que desaparezcan en silencio.
+
+Limitación de detectar_anomalias: la propia anomalía infla la desviación
+estándar, así que dos valores extremos parecidos pueden taparse entre sí.
+Es una señal orientativa, no una prueba.
+
+
+5.10 Makers/Resumen/resumen.py  -  EL TEXTO DEL RESUMEN
+.............................................................................
+Objetivo: convertir las cifras de Agregacion en un texto legible.
+
+    generar_resumen(cliente_id, granularidad="mes")
+        Pide las métricas, se las pasa a Groq y devuelve DOS cosas:
+        (texto, metricas). Devuelve las métricas a propósito: permiten
+        comprobar si el texto dice algo que no está en los datos.
+        Lanza ValueError si el cliente no tiene movimientos.
+
+    _recortar_descripciones(metricas)
+        Corta las descripciones a 120 caracteres. Acorta el prompt y
+        reduce el texto de terceros que llega al modelo.
+
+El prompt (PROMPT_RESUMEN_FINANCIERO) le prohíbe calcular: solo puede usar
+cifras que estén en los datos que recibe. También repite el patrón
+anti-inyección del resto del proyecto, porque las descripciones vienen de
+los extractos del cliente y pueden contener texto hostil.
+
+OJO con max_tokens: gpt-oss-120b gasta tokens razonando antes de responder.
+Con 1000 el resumen se cortaba a media frase; el valor por defecto es 3000.
+
+
+5.11 Makers/Constantes/  -  VALORES FIJOS
 .............................................................................
 Las constantes se escriben como funciones y se "instancian" en el archivo
 que las usa: CATEGORIAS_PERMITIDAS = CATEGORIAS_PERMITIDAS().
@@ -430,7 +552,7 @@ ejemplos_categorias.py
     reales) que forman la base inicial del RAG.
 
 
-5.10 Makers/Evaluacion/evaluacion.py y Makers/ejecutar_casos.py
+5.12 Makers/Evaluacion/evaluacion.py y Makers/ejecutar_casos.py
 .............................................................................
 Objetivo: medir cómo se comporta el sistema.
 
@@ -446,7 +568,7 @@ Objetivo: medir cómo se comporta el sistema.
         Sirve para comparar con y sin RAG.
 
 
-5.11 Makers/tests/  -  PRUEBAS AUTOMÁTICAS
+5.13 Makers/tests/  -  PRUEBAS AUTOMÁTICAS
 .............................................................................
 Se ejecutan desde la RAÍZ del proyecto:
     pytest -m "not llm" -v   solo unitarias: rápidas, sin Ollama ni Groq
@@ -485,20 +607,51 @@ marcar "formato_numerico_ambiguo").
    Crea .venv, instala requirements.txt y descarga qwen3:8b y bge-m3.
 3. Crear .env en la raíz con:  GROQ_API_KEY=tu_clave
 4. Activar el entorno:  .venv\Scripts\activate   (Windows)
-5. cd Makers
-6. python rag.py indexar
-7. python main.py "Pagué 45.900 COP a Netflix" --cliente prueba --no-guardar
+                        source .venv/bin/activate (Linux/macOS)
+5. Comprobar que Ollama tiene los dos modelos:  ollama list
+   Deben aparecer qwen3:8b y bge-m3. Si falta alguno:
+        ollama pull qwen3:8b
+        ollama pull bge-m3
+6. cd Makers
+7. python rag.py indexar
+   Crea datos/rag_categorias.db con los 51 ejemplos y sus embeddings.
+   Tarda un poco la primera vez porque calcula los vectores.
+8. python main.py "Pagué 45.900 COP a Netflix" --cliente prueba --no-guardar
+
+Para ver el flujo completo hasta el resumen:
+
+    python main.py "Pagué 45.900 COP a Netflix" --cliente prueba
+    python main.py "Recibí mi nomina de 2.500.000 COP" --cliente prueba
+    python main.py --listar --cliente prueba
+    python main.py --resumen --cliente prueba --metricas
+
+El resumen necesita varios movimientos para ser útil: la detección de
+anomalías pide un histórico mínimo de 5 movimientos del mismo tipo.
+
+Si Ollama está apagado, el pipeline falla en la extracción. Si está
+encendido pero falta bge-m3, el pipeline SIGUE funcionando pero sin
+ejemplos del RAG: verás un warning y el revisor trabajará a ciegas.
 
 
 -------------------------------------------------------------------------------
 7. QUÉ FALTA POR HACER (problemas conocidos)
 -------------------------------------------------------------------------------
 
-[ ] La base no guarda requiere_revision_humana ni motivo_revision.
-    La tabla "movimientos" no tiene esas columnas, así que se pierde qué
-    movimientos necesitan revisión humana. Hay que agregarlas (con una
-    migración para bases ya creadas). La constante _CAMPOS_MOVIMIENTO de
-    almacenamiento.py tampoco se usa.
+[ ] requirements.txt arrastra dependencias que nadie usa.
+    Tiene unos 60 paquetes de Zope/grokcore (zope.*, ZODB, grokcore.*,
+    persistent, transaction, BTrees) que no aparecen en ningún import del
+    proyecto. Vienen de un pip freeze hecho sobre un entorno contaminado.
+    Ensucian cualquier instalación desde cero. Además el archivo está en
+    UTF-16, no UTF-8, lo que complica leerlo con herramientas estándar.
+
+[ ] No hay tests del resumen ni de la agregación.
+    Agregacion y Resumen se probaron a mano. Faltan tests unitarios de
+    resumen_por_periodo, top_categorias y detectar_anomalias (son puro
+    SQL/Python, se prueban sin LLM y sin red).
+
+[ ] El resumen no permite filtrar por rango de fechas.
+    generar_resumen siempre resume todo el histórico del cliente. Falta
+    poder pedir "solo septiembre" o "del mes X al mes Y".
 
 [ ] La lectura de las respuestas del LLM se rompe fácilmente.
     json.loads falla si el modelo responde con Markdown (```json), texto
@@ -572,8 +725,13 @@ Seguridad y privacidad
 
 Funcionalidad
     - Entrada por PDF.
-    - Consultas sobre el historial ("¿cuánto gasté en transporte en
-      agosto?"), mejor con SQL sobre movimientos.db que con el RAG.
+    - Preguntas libres sobre el historial ("¿cuánto gasté en transporte en
+      agosto?"). El resumen actual es fijo: siempre dice lo mismo sobre
+      todo el histórico. Para responder preguntas concretas conviene
+      traducir la pregunta a SQL sobre movimientos.db, no usar el RAG: las
+      cifras deben salir de una consulta, no de recuperar textos parecidos.
+    - Gráficas del resumen (evolución del balance, peso por categoría).
+    - Convertir un extracto bancario completo en un solo comando.
 
 
 -------------------------------------------------------------------------------
@@ -590,3 +748,9 @@ Funcionalidad
 - Si algo del RAG no funciona: comprueba que Ollama esté abierto y que
   "ollama list" muestre bge-m3. Si no, el pipeline sigue funcionando pero
   sin ejemplos (verás un aviso).
+- Si cambias algo de Agregacion, comprueba el resumen con --metricas: te
+  muestra las cifras exactas que recibió el LLM, así puedes contrastar el
+  texto contra los datos y detectar si inventó algo.
+- El LLM del resumen no debe calcular nunca. Si necesitas una cifra nueva
+  en el texto, agrégala primero a Agregacion; no le pidas al modelo que la
+  deduzca.
