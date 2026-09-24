@@ -7,698 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  /* Papel y tinta: el mundo de la factura impresa */
-  --papel:        #F5F2EA;
-  --papel-banda:  #EAE5D8;
-  --papel-borde:  #D6D0BF;
-  --tinta:        #1C1A16;
-  --tinta-media:  #5C564A;
-  --tinta-suave:  #6E6757;
-  --sello:        #1D4E6F;
-  --escritorio:   #DCD6C8;
-
-  /* Semántica del movimiento. Nunca va sola: siempre con signo. */
-  --ingreso:      #15663A;
-  --egreso:       #9E2B1E;
-
-  --sombra-hoja: 0 1px 2px rgba(28,26,22,.06), 0 12px 32px -12px rgba(28,26,22,.18);
-
-  --serie: 'Archivo', system-ui, sans-serif;
-  --estrecha: 'Archivo Narrow', 'Archivo', system-ui, sans-serif;
-
-  --paso-1: .75rem;
-  --paso-2: 1.25rem;
-  --paso-3: 2rem;
-  --paso-4: 3rem;
-  --paso-5: 4.5rem;
-}
-
-*,*::before,*::after{ box-sizing:border-box; }
-
-.sr{
-  position:absolute; width:1px; height:1px;
-  padding:0; margin:-1px; overflow:hidden;
-  clip:rect(0 0 0 0); white-space:nowrap; border:0;
-}
-
-html{ -webkit-text-size-adjust:100%; }
-
-body{
-  margin:0;
-  background:var(--escritorio);
-  color:var(--tinta);
-  font-family:var(--serie);
-  font-size:16px;
-  line-height:1.5;
-  font-variant-numeric:tabular-nums;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* Superficies del navegador: también son parte del diseño */
-::selection{ background:var(--sello); color:var(--papel); }
-:focus-visible{ outline:2px solid var(--sello); outline-offset:3px; }
-@supports (scrollbar-color: auto){
-  html{ scrollbar-color:var(--papel-borde) var(--escritorio); scrollbar-width:thin; }
-}
-
-/* ───────────────────────── La hoja ───────────────────────── */
-
-.hoja{
-  max-width:74rem;
-  margin:0 auto;
-  background:var(--papel);
-  box-shadow:var(--sombra-hoja);
-  padding:var(--paso-4) var(--paso-4) var(--paso-5);
-  padding-top:calc(var(--paso-4) + env(safe-area-inset-top, 0px));
-}
-
-@media (min-width:60rem){
-  body{ padding:var(--paso-4) var(--paso-3); }
-  .hoja{ padding:var(--paso-5) var(--paso-5) calc(var(--paso-5) * 1.3); }
-}
-
-@media (max-width:40rem){
-  .hoja{ padding:var(--paso-3) var(--paso-2) var(--paso-4); }
-}
-
-/* ───────────────────── Membrete ───────────────────── */
-
-.membrete{
-  display:flex;
-  flex-wrap:wrap;
-  gap:var(--paso-3);
-  justify-content:space-between;
-  align-items:flex-end;
-  padding-bottom:var(--paso-2);
-  border-bottom:2px solid var(--tinta);
-}
-
-.membrete__emisor{ min-width:0; }
-
-.membrete__marca{
-  display:flex;
-  align-items:center;
-  gap:.6rem;
-  margin:0 0 .35rem;
-}
-
-.membrete__sello{
-  width:1.6rem; height:1.6rem;
-  flex:none;
-  color:var(--sello);
-}
-
-.membrete__nombre{
-  font-family:var(--estrecha);
-  font-size:.8rem;
-  font-weight:700;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  color:var(--sello);
-  margin:0;
-}
-
-.membrete__titulo{
-  font-size:clamp(1.9rem, 1.2rem + 2.4vw, 2.9rem);
-  font-weight:700;
-  letter-spacing:-.022em;
-  line-height:1.04;
-  margin:0;
-  text-wrap:balance;
-}
-
-.membrete__periodo{
-  font-family:var(--estrecha);
-  font-size:1rem;
-  color:var(--tinta-media);
-  margin:.45rem 0 0;
-}
-
-/* Bloque de datos del documento, como el recuadro de una factura real */
-.documento{
-  display:grid;
-  grid-template-columns:auto auto;
-  gap:.2rem var(--paso-2);
-  font-family:var(--estrecha);
-  font-size:.82rem;
-  margin:0;
-  border-left:1px solid var(--papel-borde);
-  padding-left:var(--paso-2);
-}
-
-.documento dt{
-  color:var(--tinta-suave);
-  text-transform:uppercase;
-  letter-spacing:.08em;
-}
-
-.documento dd{
-  margin:0;
-  text-align:right;
-  font-weight:500;
-  font-variant-numeric:tabular-nums;
-}
-
-@media (max-width:40rem){
-  .membrete{ align-items:flex-start; gap:var(--paso-2); }
-  .documento{ border-left:0; padding-left:0; border-top:1px solid var(--papel-borde); padding-top:.75rem; width:100%; grid-template-columns:auto 1fr; }
-}
-
-/* ───────────────────── Liquidación ───────────────────── */
-
-.liquidacion{
-  margin-top:var(--paso-4);
-}
-
-.liquidacion__titulo{
-  font-family:var(--estrecha);
-  font-size:.78rem;
-  font-weight:600;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  color:var(--tinta-media);
-  margin:0 0 var(--paso-2);
-}
-
-.renglon{
-  display:flex;
-  align-items:baseline;
-  gap:.75rem;
-  padding:.62rem 0;
-  border-bottom:1px solid var(--papel-borde);
-}
-
-.renglon__concepto{
-  font-size:1.02rem;
-  flex:none;
-}
-
-.renglon__guia{
-  flex:1 1 auto;
-  min-width:1.5rem;
-  border-bottom:1px dotted var(--papel-borde);
-  transform:translateY(-.28em);
-}
-
-.renglon__monto{
-  flex:none;
-  font-variant-numeric:tabular-nums;
-  font-size:1.1rem;
-  font-weight:500;
-  letter-spacing:-.01em;
-  white-space:nowrap;
-}
-
-.renglon__n{
-  font-family:var(--estrecha);
-  font-size:.78rem;
-  color:var(--tinta-suave);
-  flex:none;
-}
-
-.signo{ font-weight:600; }
-.monto--ingreso .signo{ color:var(--ingreso); }
-.monto--egreso  .signo{ color:var(--egreso); }
-
-/* La caja del total: el gesto monumental de la factura */
-.total{
-  margin-top:var(--paso-3);
-  border:2.5px solid var(--tinta);
-  background:var(--papel-banda);
-  padding:var(--paso-2) var(--paso-3);
-  display:flex;
-  flex-wrap:wrap;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:.5rem var(--paso-3);
-}
-
-.total__etiqueta{
-  font-family:var(--estrecha);
-  font-size:.92rem;
-  font-weight:700;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  margin:0;
-}
-
-.total__cifra{
-  font-size:clamp(2.4rem, 1.2rem + 4.4vw, 4rem);
-  font-weight:700;
-  letter-spacing:-.035em;
-  line-height:1;
-  font-variant-numeric:tabular-nums;
-  white-space:nowrap;
-  margin:0;
-}
-
-.total__cifra .signo{ margin-right:.06em; }
-.total--positivo .total__cifra{ color:var(--ingreso); }
-.total--negativo .total__cifra{ color:var(--egreso); }
-
-.total__nota{
-  flex-basis:100%;
-  font-family:var(--estrecha);
-  font-size:.84rem;
-  color:var(--tinta-media);
-  margin:.35rem 0 0;
-}
-
-@media (max-width:40rem){
-  .total{ padding:var(--paso-2); }
-  .renglon__concepto{ font-size:.95rem; }
-  .renglon__monto{ font-size:1rem; }
-}
-
-/* Muy estrecho: la cifra no cabe junto a su etiqueta, así que se apila a
-   propósito en vez de envolver y quedar empujada a la derecha. */
-@media (max-width:30rem){
-  .total{ flex-direction:column; align-items:flex-start; gap:.35rem; }
-  .renglon__n{ display:none; }
-}
-
-/* ───────────────────── Desglose por categoría ───────────────────── */
-
-.bloque{ margin-top:var(--paso-5); }
-
-.bloque__titulo{
-  font-family:var(--estrecha);
-  font-size:.78rem;
-  font-weight:600;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  color:var(--tinta-media);
-  margin:0 0 var(--paso-1);
-}
-
-.bloque__nota{
-  font-family:var(--estrecha);
-  font-size:.86rem;
-  color:var(--tinta-media);
-  margin:0 0 var(--paso-2);
-  max-width:64ch;
-}
-
-.detalle{ --cols:minmax(7.5rem,11rem) 1fr 3.2rem auto; }
-
-/* Encabezado de columnas: el recurso con el que una factura evita repetir la
-   unidad en cada renglón. */
-.detalle__encabezado{
-  display:grid;
-  grid-template-columns:var(--cols);
-  align-items:end;
-  column-gap:var(--paso-2);
-  padding:0 .5rem .4rem 0;
-  border-bottom:1px solid var(--tinta);
-  font-family:var(--estrecha);
-  font-size:.7rem;
-  font-weight:600;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:var(--tinta-suave);
-}
-
-.detalle__encabezado span:nth-child(3),
-.detalle__encabezado span:nth-child(4){ text-align:right; }
-
-.detalle__fila{
-  display:grid;
-  grid-template-columns:var(--cols);
-  align-items:center;
-  column-gap:var(--paso-2);
-  padding:.42rem .5rem;
-  padding-left:0;
-  border-bottom:1px solid var(--papel-borde);
-  transition:background-color .12s ease-out;
-}
-
-.detalle__fila:hover{ background:var(--papel-banda); }
-
-.detalle__nombre{
-  font-size:.98rem;
-  min-width:0;
-  overflow-wrap:break-word;
-}
-
-.detalle__medida{
-  display:flex;
-  align-items:center;
-  gap:.6rem;
-  min-width:0;
-}
-
-/* Barra impresa: extremos rectos, tinta sólida. Una factura no redondea. */
-.barra{
-  flex:1 1 auto;
-  height:.72rem;
-  background:var(--papel-banda);
-  min-width:2rem;
-}
-
-.barra__relleno{
-  display:block;
-  height:100%;
-  background:var(--sello);
-}
-
-.detalle__pct{
-  font-family:var(--estrecha);
-  font-size:.82rem;
-  color:var(--tinta-media);
-  font-variant-numeric:tabular-nums;
-  flex:none;
-  width:3.2rem;
-  text-align:right;
-}
-
-.detalle__n{
-  text-align:right;
-  font-family:var(--estrecha);
-  font-size:.84rem;
-  color:var(--tinta-media);
-  font-variant-numeric:tabular-nums;
-}
-
-.detalle__monto{
-  text-align:right;
-  white-space:nowrap;
-  font-variant-numeric:tabular-nums;
-  font-size:1.02rem;
-  font-weight:500;
-  letter-spacing:-.01em;
-}
-
-.detalle__total{
-  display:grid;
-  grid-template-columns:var(--cols);
-  column-gap:var(--paso-2);
-  padding:.6rem .5rem 0 0;
-  font-family:var(--estrecha);
-  font-weight:700;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  font-size:.76rem;
-}
-
-.detalle__total span:nth-child(3){
-  text-align:right;
-  font-variant-numeric:tabular-nums;
-  letter-spacing:0;
-  font-size:.84rem;
-}
-
-.detalle__total span:last-child{
-  text-align:right;
-  font-variant-numeric:tabular-nums;
-  letter-spacing:-.01em;
-  text-transform:none;
-  font-size:1.02rem;
-}
-
-@media (max-width:48rem){
-  .detalle{ --cols:1fr auto; }
-  .detalle__encabezado span:nth-child(2),
-  .detalle__encabezado span:nth-child(3){ display:none; }
-  .detalle__fila{ row-gap:.35rem; padding:.55rem .5rem .55rem 0; }
-  .detalle__medida{ grid-column:1 / -1; order:3; }
-  .detalle__nombre{ order:1; }
-  .detalle__monto{ order:2; }
-  .detalle__n{ display:none; }
-  .detalle__total span:nth-child(2),
-  .detalle__total span:nth-child(3){ display:none; }
-}
-
-/* ───────────────── Lectura redactada por el modelo ───────────────── */
-
-.lectura{
-  margin-top:var(--paso-3);
-  background:var(--papel-banda);
-  border-top:2px solid var(--sello);
-  padding:var(--paso-2) var(--paso-3) var(--paso-3);
-}
-
-.lectura__titulo{
-  font-family:var(--estrecha);
-  font-size:.78rem;
-  font-weight:600;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  color:var(--sello);
-  margin:0 0 .15rem;
-}
-
-.lectura__origen{
-  font-family:var(--estrecha);
-  font-size:.8rem;
-  color:var(--tinta-media);
-  margin:0 0 var(--paso-2);
-  max-width:70ch;
-}
-
-.lectura__cuerpo p{
-  margin:0 0 .85rem;
-  max-width:70ch;
-  line-height:1.62;
-}
-
-.lectura__cuerpo p:last-child{ margin-bottom:0; }
-
-/* El texto se queda en su medida de lectura; el encabezado ocupa la columna
-   que sobra en vez de dejar media banda vacía. */
-@media (min-width:60rem){
-  .lectura{
-    display:grid;
-    grid-template-columns:13rem 1fr;
-    /* La tercera fila absorbe el alto sobrante: sin ella la nota de
-       procedencia se separa de su título al estirarse el cuerpo. */
-    grid-template-rows:auto auto 1fr;
-    column-gap:var(--paso-3);
-  }
-  .lectura__titulo{ grid-column:1; grid-row:1; }
-  .lectura__origen{ grid-column:1; grid-row:2; margin-bottom:0; }
-  .lectura__cuerpo{ grid-column:2; grid-row:1 / -1; }
-}
-
-@media (max-width:40rem){
-  .lectura{ padding:var(--paso-2); }
-}
-
-/* ───────────────── Lo que conviene revisar ───────────────── */
-
-.marcado{
-  border-top:1px solid var(--tinta);
-}
-
-.marcado__item{
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:.3rem var(--paso-2);
-  padding:.85rem 0;
-  border-bottom:1px solid var(--papel-borde);
-}
-
-.marcado__desc{
-  font-size:1rem;
-  margin:0;
-  min-width:0;
-  overflow-wrap:break-word;
-}
-
-.marcado__monto{
-  font-variant-numeric:tabular-nums;
-  font-size:1.02rem;
-  font-weight:500;
-  white-space:nowrap;
-  text-align:right;
-  letter-spacing:-.01em;
-}
-
-.marcado__monto--ingreso .signo{ color:var(--ingreso); }
-.marcado__monto--egreso .signo{ color:var(--egreso); }
-
-.marcado__meta{
-  grid-column:1 / -1;
-  display:flex;
-  flex-wrap:wrap;
-  align-items:baseline;
-  gap:.35rem .8rem;
-  font-family:var(--estrecha);
-  font-size:.84rem;
-  color:var(--tinta-media);
-}
-
-.marcado__fecha{
-  font-variant-numeric:tabular-nums;
-  color:var(--tinta-suave);
-}
-
-.motivo{
-  display:inline-block;
-  border:1px solid var(--sello);
-  color:var(--sello);
-  padding:.06rem .45rem;
-  font-size:.78rem;
-  line-height:1.5;
-}
-
-.marcado__razon{
-  grid-column:1 / -1;
-  margin:.15rem 0 0;
-  font-size:.92rem;
-  color:var(--tinta-media);
-  max-width:70ch;
-}
-
-/* ───────────────────── Evolución por periodo ───────────────────── */
-
-.evolucion{ border-top:1px solid var(--tinta); }
-
-.periodo{
-  padding:var(--paso-2) 0;
-  border-bottom:1px solid var(--papel-borde);
-}
-
-.periodo__cab{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:.3rem var(--paso-2);
-  margin-bottom:.7rem;
-}
-
-.periodo__mes{
-  font-size:1.05rem;
-  font-weight:600;
-  letter-spacing:-.012em;
-  margin:0;
-  text-transform:capitalize;
-}
-
-.periodo__balance{
-  margin:0;
-  font-variant-numeric:tabular-nums;
-  font-size:1.05rem;
-  font-weight:600;
-  letter-spacing:-.015em;
-  white-space:nowrap;
-}
-
-.periodo__balance small{
-  font-family:var(--estrecha);
-  font-size:.72rem;
-  font-weight:600;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:var(--tinta-suave);
-  margin-right:.5rem;
-}
-
-/* Ancho fijo para la cifra: sin esto la etiqueta BALANCE se desplaza de un mes
-   a otro según cuántos dígitos tenga el número. */
-.periodo__cifra{
-  display:inline-block;
-  min-width:10ch;
-  text-align:right;
-}
-
-.periodo__balance--positivo{ color:var(--ingreso); }
-.periodo__balance--negativo{ color:var(--egreso); }
-
-.periodo__linea{
-  display:grid;
-  grid-template-columns:5.5rem 1fr auto;
-  align-items:center;
-  column-gap:var(--paso-2);
-  padding:.2rem 0;
-}
-
-.periodo__etiqueta{
-  font-family:var(--estrecha);
-  font-size:.84rem;
-  color:var(--tinta-media);
-}
-
-.periodo__valor{
-  font-variant-numeric:tabular-nums;
-  font-size:.98rem;
-  white-space:nowrap;
-  text-align:right;
-}
-
-.barra__relleno--ingreso{ background:var(--ingreso); }
-.barra__relleno--egreso{ background:var(--egreso); }
-
-@media (max-width:34rem){
-  .periodo__linea{ grid-template-columns:4.4rem 1fr auto; column-gap:.7rem; }
-  .periodo__valor{ font-size:.9rem; }
-  .periodo__etiqueta{ font-size:.78rem; }
-}
-
-/* ───────────────────── Estados ───────────────────── */
-
-.aviso{
-  max-width:44rem;
-  margin:var(--paso-5) auto;
-  background:var(--papel);
-  border:1px solid var(--papel-borde);
-  border-top:3px solid var(--sello);
-  padding:var(--paso-3);
-  box-shadow:var(--sombra-hoja);
-}
-
-.aviso h2{
-  font-size:1.15rem;
-  margin:0 0 .6rem;
-  letter-spacing:-.015em;
-}
-
-.aviso p{ margin:0 0 .8rem; color:var(--tinta-media); max-width:68ch; }
-.aviso p:last-child{ margin-bottom:0; }
-
-.aviso code{
-  font-family:var(--estrecha);
-  background:var(--papel-banda);
-  border:1px solid var(--papel-borde);
-  padding:.14em .45em;
-  font-size:.92em;
-  white-space:nowrap;
-}
-
-.cargando{
-  display:flex;
-  align-items:center;
-  gap:.7rem;
-  font-family:var(--estrecha);
-  color:var(--tinta-media);
-  padding:var(--paso-5) 0;
-  justify-content:center;
-}
-
-.cargando::before{
-  content:"";
-  width:.9rem; height:.9rem;
-  border:2px solid var(--papel-borde);
-  border-top-color:var(--sello);
-  border-radius:50%;
-  animation:girar .7s linear infinite;
-}
-
-@keyframes girar{ to{ transform:rotate(360deg); } }
-
-/* Entrada: un solo momento, desde un estado ya visible */
-.hoja{ animation:asentar .5s cubic-bezier(.16,1,.3,1) both; }
-@keyframes asentar{
-  from{ opacity:.4; transform:translateY(6px); }
-  to{ opacity:1; transform:none; }
-}
-
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
-}
-</style>
+<link rel="stylesheet" href="./estilo.css">
 </head>
 <body>
 <!--
@@ -718,8 +27,24 @@ body{
   review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 -->
 
-<div id="raiz">
-  <p class="cargando">Cargando estado de cuenta…</p>
+<div class="hoja">
+  <nav class="nav">
+    <a class="nav__marca" href="./index.html">
+      <svg class="nav__sello" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="4" y="2.5" width="16" height="19" rx="1"/>
+        <path d="M8 8h8M8 12h8M8 16h5"/>
+      </svg>
+      Jhan y Jhon
+    </a>
+    <div class="nav__vinculos">
+      <a href="./index.html" aria-current="page">Estado de cuenta</a>
+      <a href="./cargar.html">Cargar extractos</a>
+    </div>
+  </nav>
+
+  <div id="raiz">
+    <p class="cargando">Cargando estado de cuenta…</p>
+  </div>
 </div>
 
 <script>
@@ -1007,6 +332,48 @@ function paraRevision(movimientos) {
     </section>`;
 }
 
+function libro(movimientos) {
+  if (!movimientos?.length) return '';
+
+  const marcados = movimientos.filter(m => m.requiere_revision_humana).length;
+
+  const filas = movimientos.map((m) => {
+    const esIngreso = m.tipo === 'ingreso';
+    const quien = contraparte(m);
+    return `
+      <div class="libro__fila">
+        <span class="libro__fecha">${escapar(fechaCorta(m.fecha))}</span>
+        <span class="libro__concepto">
+          <span class="libro__desc">${escapar(m.descripcion || 'Sin descripción')}</span>${
+            m.requiere_revision_humana
+              ? `<a class="llamada" href="#tit-revision" title="Requiere revisión humana" aria-label="Requiere revisión humana">*</a>`
+              : ''}
+          ${quien ? `<span class="libro__parte"> · ${escapar(quien)}</span>` : ''}
+        </span>
+        <span class="libro__cat">${escapar(nombrarCategoria(m.categoria))}</span>
+        <span class="libro__valor ${esIngreso ? 'libro__valor--ingreso' : 'libro__valor--egreso'}">
+          <span class="signo">${esIngreso ? '+' : '−'}</span>${FORMATO.format(Math.abs(m.monto ?? 0))}
+        </span>
+      </div>`;
+  }).join('');
+
+  return `
+    <section class="bloque" aria-labelledby="tit-libro">
+      <h2 class="bloque__titulo" id="tit-libro">Movimientos del periodo</h2>
+      <p class="bloque__nota">Los ${movimientos.length} movimientos, del más reciente al más antiguo.</p>
+      <div class="libro">
+        <div class="libro__encabezado">
+          <span>Fecha</span>
+          <span>Concepto</span>
+          <span>Categoría</span>
+          <span>Valor</span>
+        </div>
+        ${filas}
+      </div>
+      ${marcados ? `<p class="libro__pie"><span class="llamada">*</span> ${marcados === 1 ? 'Este movimiento requiere' : `Estos ${marcados} movimientos requieren`} revisión humana. El motivo está más arriba, en «Clasificación incierta».</p>` : ''}
+    </section>`;
+}
+
 function membrete(datos, total) {
   const generado = new Date(datos.generado);
   const fechaLegible = `${generado.getDate()} ${MESES[generado.getMonth()]} ${generado.getFullYear()}`;
@@ -1014,13 +381,6 @@ function membrete(datos, total) {
   return `
     <header class="membrete">
       <div class="membrete__emisor">
-        <div class="membrete__marca">
-          <svg class="membrete__sello" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-            <rect x="4" y="2.5" width="16" height="19" rx="1"/>
-            <path d="M8 8h8M8 12h8M8 16h5"/>
-          </svg>
-          <p class="membrete__nombre">Jhan y Jhon</p>
-        </div>
         <h1 class="membrete__titulo">Estado de cuenta</h1>
         <p class="membrete__periodo">${escapar(rangoPeriodos(datos.periodos))}</p>
       </div>
@@ -1044,7 +404,7 @@ function render(datos) {
   if (!total) return mostrarAviso('Sin movimientos', '<p>Este estado de cuenta no tiene movimientos para mostrar.</p>');
 
   document.getElementById('raiz').innerHTML = `
-    <main class="hoja">
+    <main>
       ${membrete(datos, total)}
       ${liquidacion(total, total.moneda, datos.movimientos_sin_fecha)}
       ${avisoOtrasMonedas(datos.totales)}
@@ -1054,6 +414,7 @@ function render(datos) {
       ${desglose(datos.categorias_ingreso, 'De dónde vino el dinero', null, 'tit-ingresos')}
       ${inusuales(datos.anomalias)}
       ${paraRevision(datos.para_revision)}
+      ${libro(datos.movimientos)}
     </main>`;
 
   document.title = `Estado de cuenta · ${datos.cliente_id} · Jhan y Jhon`;

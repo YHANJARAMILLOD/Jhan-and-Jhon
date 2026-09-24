@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cargar extractos · Jhan y Jhon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./estilo.css">
+</head>
+<body>
+<!--
+  Segunda superficie del mismo mundo. Hereda papel, tinta y rejilla de
+  index.html; no introduce identidad nueva.
+  ESTADO: la interacción de arrastrar y soltar funciona de verdad, pero el
+  procesamiento no está conectado al pipeline. La página lo dice donde el
+  usuario lo ve, en vez de fingir que carga.
+-->
+
+<div class="hoja">
+  <nav class="nav">
+    <a class="nav__marca" href="./index.html">
+      <svg class="nav__sello" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="4" y="2.5" width="16" height="19" rx="1"/>
+        <path d="M8 8h8M8 12h8M8 16h5"/>
+      </svg>
+      Jhan y Jhon
+    </a>
+    <div class="nav__vinculos">
+      <a href="./index.html">Estado de cuenta</a>
+      <a href="./cargar.html" aria-current="page">Cargar extractos</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="membrete">
+      <div class="membrete__emisor">
+        <h1 class="membrete__titulo">Cargar extractos</h1>
+        <p class="membrete__periodo">Añade los extractos que quieras analizar</p>
+      </div>
+    </header>
+
+    <div class="aviso" role="note">
+      <h2>Esta parte todavía no está conectada</h2>
+      <p>Puedes arrastrar archivos y verlos listados, pero <strong>aún no se envían al pipeline</strong>: el análisis no se ejecutará. Es una vista previa de cómo funcionará la carga.</p>
+      <p>Mientras tanto, los extractos se procesan desde la terminal, dentro de la carpeta <code>Makers</code>. Primero se analiza el extracto:</p>
+      <p><code>python main.py --archivo extracto.txt --cliente cliente_demo</code></p>
+      <p>y después se regenera este sitio:</p>
+      <p><code>python main.py --exportar --cliente cliente_demo</code></p>
+    </div>
+
+    <section aria-labelledby="tit-zona">
+      <h2 class="bloque__titulo" id="tit-zona">Archivos</h2>
+
+      <div class="zona" id="zona">
+        <svg class="zona__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/>
+          <path d="M3.5 15v3.5a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V15"/>
+        </svg>
+        <p class="zona__titulo">Arrastra aquí tus extractos</p>
+        <p class="zona__ayuda">Puedes soltar varios a la vez, de meses distintos. Cada archivo se procesará como un extracto independiente.</p>
+        <button class="boton" type="button" id="elegir">Elegir archivos</button>
+        <p class="zona__formatos">Formatos previstos: TXT, CSV y PDF · hasta 10 MB por archivo</p>
+        <input type="file" id="entrada" multiple accept=".txt,.csv,.pdf" class="sr" tabindex="-1">
+      </div>
+
+      <div id="adjuntos" aria-live="polite"></div>
+    </section>
+
+    <section class="bloque" aria-labelledby="tit-cargados">
+      <h2 class="bloque__titulo" id="tit-cargados">Extractos ya procesados</h2>
+      <p class="bloque__nota">Los periodos que hoy alimentan el estado de cuenta.</p>
+      <div id="cargados"><p class="cargando">Cargando…</p></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const FORMATO = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+const escapar = (valor) => String(valor ?? '').replace(/[&<>"']/g, (c) => (
+  { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+));
+
+const nombrarPeriodo = (clave) => {
+  if (clave === 'sin_fecha') return 'sin fecha';
+  const [anio, mes] = clave.split('-');
+  return mes ? `${MESES[Number(mes) - 1]} ${anio}` : anio;
+};
+
+const pesoLegible = (bytes) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+/* ── Zona de arrastre ── */
+
+const zona = document.getElementById('zona');
+const entrada = document.getElementById('entrada');
+const listaNodo = document.getElementById('adjuntos');
+let archivos = [];
+
+function pintarAdjuntos() {
+  if (!archivos.length) {
+    listaNodo.innerHTML = '';
+    return;
+  }
+
+  const filas = archivos.map((a, i) => `
+    <div class="adjuntos__fila">
+      <svg class="adjuntos__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V7.5z"/>
+        <path d="M14 3v4.5h4.5"/>
+      </svg>
+      <span class="adjuntos__nombre">${escapar(a.name)}</span>
+      <span class="adjuntos__peso">${escapar(pesoLegible(a.size))}</span>
+      <button class="adjuntos__quitar" type="button" data-i="${i}">Quitar</button>
+    </div>`).join('');
+
+  listaNodo.innerHTML = `
+    <div class="adjuntos">
+      ${filas}
+      <p class="zona__formatos">${archivos.length} ${archivos.length === 1 ? 'archivo listo' : 'archivos listos'} · el procesamiento aún no está conectado, así que no se enviarán a ninguna parte.</p>
+    </div>`;
+}
+
+function agregar(lista) {
+  // Se descartan repetidos por nombre y tamaño: soltar dos veces el mismo
+  // extracto es el error más fácil de cometer aquí.
+  for (const archivo of lista) {
+    const yaEsta = archivos.some(a => a.name === archivo.name && a.size === archivo.size);
+    if (!yaEsta) archivos.push(archivo);
+  }
+  pintarAdjuntos();
+}
+
+document.getElementById('elegir').addEventListener('click', () => entrada.click());
+entrada.addEventListener('change', (e) => { agregar(e.target.files); entrada.value = ''; });
+
+listaNodo.addEventListener('click', (e) => {
+  const boton = e.target.closest('.adjuntos__quitar');
+  if (!boton) return;
+  archivos.splice(Number(boton.dataset.i), 1);
+  pintarAdjuntos();
+});
+
+['dragenter', 'dragover'].forEach(evento => {
+  zona.addEventListener(evento, (e) => { e.preventDefault(); zona.classList.add('zona--activa'); });
+});
+
+['dragleave', 'drop'].forEach(evento => {
+  zona.addEventListener(evento, (e) => {
+    e.preventDefault();
+    // dragleave salta también al pasar sobre los hijos de la zona
+    if (evento === 'dragleave' && zona.contains(e.relatedTarget)) return;
+    zona.classList.remove('zona--activa');
+  });
+});
+
+zona.addEventListener('drop', (e) => agregar(e.dataTransfer.files));
+
+// El navegador abriría el archivo soltado fuera de la zona, perdiendo la página.
+['dragover', 'drop'].forEach(evento => {
+  document.addEventListener(evento, (e) => { if (!zona.contains(e.target)) e.preventDefault(); });
+});
+
+/* ── Extractos ya procesados ── */
+
+fetch('./datos.json', { cache: 'no-store' })
+  .then(r => { if (!r.ok) throw new Error(`El servidor respondió ${r.status}`); return r.json(); })
+  .then((datos) => {
+    const periodos = (datos.periodos ?? []).filter(p => p.moneda === datos.moneda_principal);
+    const nodo = document.getElementById('cargados');
+
+    if (!periodos.length) {
+      nodo.innerHTML = '<p class="bloque__nota">Todavía no hay extractos procesados.</p>';
+      return;
+    }
+
+    nodo.innerHTML = `
+      <div class="cargado cargado--encabezado">
+        <span>Periodo</span>
+        <span>Movimientos</span>
+        <span>Total movido</span>
+      </div>
+      ${periodos.map(p => `
+        <div class="cargado">
+          <p class="cargado__mes">${escapar(nombrarPeriodo(p.periodo))}</p>
+          <span class="cargado__n">${p.n_movimientos}</span>
+          <span class="cargado__monto">${FORMATO.format(p.ingresos + p.egresos)} ${escapar(p.moneda)}</span>
+        </div>`).join('')}`;
+  })
+  .catch(() => {
+    document.getElementById('cargados').innerHTML =
+      '<p class="bloque__nota">No se pudieron leer los extractos procesados. Genera <code>datos.json</code> con <code>python main.py --exportar</code>.</p>';
+  });
+</script>
+</body>
+</html>
