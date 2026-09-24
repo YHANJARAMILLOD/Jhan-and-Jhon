@@ -52,6 +52,18 @@ def MODELO_EXTRACCION():
 def MODELO_REVISION():
     return "openai/gpt-oss-120b"
 
+def MODELO_EMBEDDINGS():
+    # Modelo multilingüe de Ollama para los embeddings del RAG.
+    return "bge-m3"
+
+def RAG_TOP_K():
+    # Máximo de ejemplos recuperados por movimiento.
+    return 3
+
+def RAG_UMBRAL_SIMILITUD():
+    # Similitud coseno mínima para que un ejemplo se envíe al revisor.
+    return 0.65
+
 def COLUMNAS_RESULTADOS():
     return [
     "caso",
@@ -70,5 +82,6 @@ def COLUMNAS_RESULTADOS():
     "descripcion",
     "requiere_revision_humana",
     "motivo_revision",
+    "ejemplos_rag",
     "error",
 ]

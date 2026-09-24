@@ -73,8 +73,10 @@ def guardar_movimientos(cliente_id, extracto_id, movimientos_anonimizados, db_pa
     Ollama/Groq ni a anonimizar aquí, solo se guarda lo ya procesado.
 
     Solo se guardan los elementos con es_movimiento_financiero=True.
-    Es idempotente: reprocesar el mismo extracto sobrescribe las mismas
-    filas en lugar de duplicarlas.
+    Es idempotente: reprocesar el mismo extracto reemplaza sus filas en
+    lugar de duplicarlas. Se borran las filas anteriores del extracto porque
+    el LLM puede redactar distinto la descripción al reprocesar, y entonces
+    el movimiento_id (que depende de los datos) ya no coincide.
 
     Devuelve la cantidad de movimientos guardados.
     """
@@ -82,6 +84,11 @@ def guardar_movimientos(cliente_id, extracto_id, movimientos_anonimizados, db_pa
     conexion = obtener_conexion(db_path)
     fecha_ingesta = datetime.now(timezone.utc).isoformat()
     guardados = 0
+
+    conexion.execute(
+        "DELETE FROM movimientos WHERE cliente_id = ? AND extracto_id = ?",
+        (cliente_id, extracto_id),
+    )
 
     for indice, item in enumerate(movimientos_anonimizados):
         if not item.get("es_movimiento_financiero"):
