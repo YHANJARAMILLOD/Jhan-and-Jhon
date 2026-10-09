@@ -4,10 +4,18 @@ from dotenv import load_dotenv
 from pathlib import Path
 import ollama
 from groq import Groq
-from Constantes.Principales_constantes import MODELO_EXTRACCION, MODELO_REVISION
+from Constantes.Principales_constantes import (
+    MODELO_EXTRACCION, MODELO_REVISION,
+    OPCIONES_EXTRACCION, PENSAR_EN_EXTRACCION, TIMEOUT_OLLAMA,
+)
 
 MODELO_EXTRACCION = MODELO_EXTRACCION()
 MODELO_REVISION = MODELO_REVISION()
+OPCIONES_EXTRACCION = OPCIONES_EXTRACCION()
+PENSAR_EN_EXTRACCION = PENSAR_EN_EXTRACCION()
+
+# Cliente propio para poder fijar el timeout; ollama.chat() no lo expone.
+ollama_cliente = ollama.Client(timeout=TIMEOUT_OLLAMA())
 
 ruta_env = Path(__file__).resolve().parent.parent.parent / '.env'
 load_dotenv(dotenv_path=ruta_env)
@@ -24,7 +32,7 @@ if not api_key:
 usuario = Groq(api_key=api_key)
 
 def extraer_movimiento(movimiento, prompt):
-    respuesta = ollama.chat(
+    respuesta = ollama_cliente.chat(
         model=MODELO_EXTRACCION,
         messages=[
             {
@@ -36,9 +44,8 @@ def extraer_movimiento(movimiento, prompt):
                 "content": movimiento
             }
         ],
-        options={
-            "temperature": 0
-        }
+        think=PENSAR_EN_EXTRACCION,
+        options=OPCIONES_EXTRACCION,
     )
 
     contenido = respuesta["message"]["content"].strip()

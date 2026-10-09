@@ -41,13 +41,18 @@
       </div>
     </header>
 
-    <div class="aviso" role="note">
+    <div class="aviso" id="aviso-estatico" role="note">
       <h2>Esta parte todavía no está conectada</h2>
-      <p>Puedes arrastrar archivos y verlos listados, pero <strong>aún no se envían al pipeline</strong>: el análisis no se ejecutará. Es una vista previa de cómo funcionará la carga.</p>
-      <p>Mientras tanto, los extractos se procesan desde la terminal, dentro de la carpeta <code>Makers</code>. Primero se analiza el extracto:</p>
-      <p><code>python main.py --archivo extracto.txt --cliente cliente_demo</code></p>
-      <p>y después se regenera este sitio:</p>
-      <p><code>python main.py --exportar --cliente cliente_demo</code></p>
+      <p>Puedes arrastrar archivos y verlos listados, pero <strong>aún no se envían al pipeline</strong>: el análisis no se ejecutará. Estás viendo la versión estática.</p>
+      <p>Para procesar de verdad, levanta el servidor local desde la carpeta <code>Makers</code>:</p>
+      <p><code>python servidor.py</code></p>
+      <p>y abre <code>http://127.0.0.1:5050/cargar</code>.</p>
+    </div>
+
+    <div class="aviso aviso--vivo" id="aviso-servidor" role="note" hidden>
+      <h2>Conectado al pipeline</h2>
+      <p>Los archivos que sueltes se analizarán de verdad: extracción local con qwen3, anonimización, revisión de categoría con Groq y guardado en la base. Al terminar se regenera el estado de cuenta.</p>
+      <p>Cada línea del archivo es una transacción y tarda unos segundos. Verás el avance línea por línea.</p>
     </div>
 
     <section aria-labelledby="tit-zona">
@@ -66,6 +71,17 @@
       </div>
 
       <div id="adjuntos" aria-live="polite"></div>
+
+      <div class="procesar" id="procesar" hidden>
+        <label class="campo">
+          <span class="campo__etiqueta">Titular</span>
+          <input class="campo__entrada" id="cliente" type="text" value="cliente_demo"
+                 autocomplete="off" spellcheck="false">
+        </label>
+        <button class="boton" type="button" id="analizar">Analizar extractos</button>
+      </div>
+
+      <div id="avance" aria-live="polite"></div>
     </section>
 
     <section class="bloque" aria-labelledby="tit-cargados">
@@ -101,7 +117,10 @@ const pesoLegible = (bytes) => {
 const zona = document.getElementById('zona');
 const entrada = document.getElementById('entrada');
 const listaNodo = document.getElementById('adjuntos');
+const avanceNodo = document.getElementById('avance');
 let archivos = [];
+let hayServidor = false;
+let procesando = false;
 
 function pintarAdjuntos() {
   if (!archivos.length) {
@@ -123,8 +142,11 @@ function pintarAdjuntos() {
   listaNodo.innerHTML = `
     <div class="adjuntos">
       ${filas}
-      <p class="zona__formatos">${archivos.length} ${archivos.length === 1 ? 'archivo listo' : 'archivos listos'} · el procesamiento aún no está conectado, así que no se enviarán a ninguna parte.</p>
+      <p class="zona__formatos">${archivos.length} ${archivos.length === 1 ? 'archivo listo' : 'archivos listos'}${
+        hayServidor ? '' : ' · el procesamiento no está conectado, así que no se enviarán a ninguna parte.'}</p>
     </div>`;
+
+  document.getElementById('procesar').hidden = !hayServidor || !archivos.length;
 }
 
 function agregar(lista) {
@@ -169,34 +191,187 @@ zona.addEventListener('drop', (e) => agregar(e.dataTransfer.files));
 
 /* ── Extractos ya procesados ── */
 
-fetch('./datos.json', { cache: 'no-store' })
-  .then(r => { if (!r.ok) throw new Error(`El servidor respondió ${r.status}`); return r.json(); })
-  .then((datos) => {
-    const periodos = (datos.periodos ?? []).filter(p => p.moneda === datos.moneda_principal);
-    const nodo = document.getElementById('cargados');
+function pintarCargados() {
+  return fetch('./datos.json', { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error(`El servidor respondió ${r.status}`); return r.json(); })
+    .then((datos) => {
+      const periodos = (datos.periodos ?? []).filter(p => p.moneda === datos.moneda_principal);
+      const nodo = document.getElementById('cargados');
 
-    if (!periodos.length) {
-      nodo.innerHTML = '<p class="bloque__nota">Todavía no hay extractos procesados.</p>';
-      return;
+      if (!periodos.length) {
+        nodo.innerHTML = '<p class="bloque__nota">Todavía no hay extractos procesados.</p>';
+        return;
+      }
+
+      nodo.innerHTML = `
+        <div class="cargado cargado--encabezado">
+          <span>Periodo</span>
+          <span>Movimientos</span>
+          <span>Total movido</span>
+        </div>
+        ${periodos.map(p => `
+          <div class="cargado">
+            <p class="cargado__mes">${escapar(nombrarPeriodo(p.periodo))}</p>
+            <span class="cargado__n">${p.n_movimientos}</span>
+            <span class="cargado__monto">${FORMATO.format(p.ingresos + p.egresos)} ${escapar(p.moneda)}</span>
+          </div>`).join('')}`;
+    })
+    .catch(() => {
+      document.getElementById('cargados').innerHTML =
+        '<p class="bloque__nota">Todavía no hay extractos procesados.</p>';
+    });
+}
+
+pintarCargados();
+
+/* ── Modo: con servidor o estático ── */
+
+fetch('/api/estado', { cache: 'no-store' })
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(() => {
+    hayServidor = true;
+    document.getElementById('aviso-estatico').hidden = true;
+    document.getElementById('aviso-servidor').hidden = false;
+    document.getElementById('procesar').hidden = !archivos.length;
+    pintarAdjuntos();
+  })
+  .catch(() => { /* sin servidor: la página se queda como estática */ });
+
+/* ── Análisis en vivo ── */
+
+const CATEGORIAS_LEGIBLES = {
+  alimentacion: 'Alimentación', transporte: 'Transporte', entretenimiento: 'Entretenimiento',
+  vivienda: 'Vivienda', salud: 'Salud', educacion: 'Educación', compras: 'Compras',
+  servicios: 'Servicios', transferencia_persona: 'Transferencia a persona',
+  ingreso_laboral: 'Ingreso laboral', otros: 'Otros'
+};
+
+const contraparte = (d) => (d.tipo === 'ingreso' ? d.nombre_remitente : d.nombre_destinatario) || d.entidad || '';
+
+function filaMovimiento(item) {
+  const d = item.movimiento || {};
+  const esIngreso = d.tipo === 'ingreso';
+  const quien = contraparte(d);
+  return `
+    <div class="avance__mov">
+      <span class="avance__mov-desc">${escapar(d.descripcion || 'Sin descripción')}${
+        quien ? ` <span class="libro__parte">· ${escapar(quien)}</span>` : ''}${
+        d.requiere_revision_humana ? ' <span class="motivo">revisar</span>' : ''}</span>
+      <span class="avance__mov-cat">${escapar(CATEGORIAS_LEGIBLES[d.categoria] ?? d.categoria ?? '—')}</span>
+      <span class="avance__mov-monto ${esIngreso ? 'libro__valor--ingreso' : 'libro__valor--egreso'}">
+        <span class="signo">${esIngreso ? '+' : '−'}</span>${FORMATO.format(Math.abs(d.monto ?? 0))}
+      </span>
+    </div>`;
+}
+
+function manejarEvento(e, estado) {
+  if (e.tipo === 'inicio') {
+    estado.total = e.total;
+    estado.cuerpo.innerHTML = '';
+    estado.barra.hidden = false;
+    return;
+  }
+
+  if (e.tipo === 'linea') {
+    estado.hechas += 1;
+    estado.barra.querySelector('.avance__relleno').style.transform = `scaleX(${estado.hechas / estado.total})`;
+    estado.barra.querySelector('.avance__cuenta').textContent = `${estado.hechas} de ${estado.total}`;
+
+    const movs = (e.movimientos ?? []).map(filaMovimiento).join('');
+    estado.cuerpo.insertAdjacentHTML('beforeend', `
+      <div class="avance__linea ${e.ok ? '' : 'avance__linea--error'}">
+        <p class="avance__texto">${escapar(e.texto)}</p>
+        ${e.ok
+          ? (movs || '<p class="avance__nota">Sin movimientos financieros en esta línea.</p>')
+          : `<p class="avance__nota avance__nota--error">${escapar(e.mensaje)}</p>`}
+      </div>`);
+    return;
+  }
+
+  if (e.tipo === 'fin') {
+    const ok = e.guardados > 0;
+    estado.cuerpo.insertAdjacentHTML('beforeend', `
+      <div class="avance__resumen ${ok ? '' : 'avance__resumen--vacio'}">
+        <p>${ok
+          ? `Se guardaron ${e.guardados} ${e.guardados === 1 ? 'movimiento' : 'movimientos'}${
+              e.fallidas ? ` y fallaron ${e.fallidas} ${e.fallidas === 1 ? 'línea' : 'líneas'}` : ''}.`
+          : escapar(e.mensaje || 'No se guardó ningún movimiento.')}</p>
+        ${e.exportado ? '<p>El estado de cuenta ya está actualizado. <a href="./index.html">Verlo</a></p>' : ''}
+        ${e.mensaje && ok ? `<p>${escapar(e.mensaje)}</p>` : ''}
+      </div>`);
+    if (e.exportado) pintarCargados();
+  }
+}
+
+async function analizar() {
+  if (procesando || !archivos.length) return;
+
+  const cliente = document.getElementById('cliente').value.trim();
+  if (!cliente) {
+    avanceNodo.innerHTML = '<p class="avance__nota avance__nota--error">Indica el titular antes de analizar.</p>';
+    return;
+  }
+
+  const boton = document.getElementById('analizar');
+  procesando = true;
+  boton.disabled = true;
+  boton.textContent = 'Analizando…';
+
+  avanceNodo.innerHTML = `
+    <div class="avance">
+      <div class="avance__barra" hidden>
+        <div class="avance__pista"><span class="avance__relleno"></span></div>
+        <span class="avance__cuenta">preparando…</span>
+      </div>
+      <div class="avance__cuerpo"><p class="cargando">Enviando extractos…</p></div>
+    </div>`;
+
+  const estado = {
+    total: 0,
+    hechas: 0,
+    barra: avanceNodo.querySelector('.avance__barra'),
+    cuerpo: avanceNodo.querySelector('.avance__cuerpo')
+  };
+
+  const datos = new FormData();
+  datos.append('cliente', cliente);
+  for (const archivo of archivos) datos.append('archivos', archivo);
+
+  try {
+    const respuesta = await fetch('/api/procesar', { method: 'POST', body: datos });
+
+    if (!respuesta.ok) {
+      const detalle = await respuesta.json().catch(() => ({}));
+      throw new Error(detalle.error || `El servidor respondió ${respuesta.status}`);
     }
 
-    nodo.innerHTML = `
-      <div class="cargado cargado--encabezado">
-        <span>Periodo</span>
-        <span>Movimientos</span>
-        <span>Total movido</span>
-      </div>
-      ${periodos.map(p => `
-        <div class="cargado">
-          <p class="cargado__mes">${escapar(nombrarPeriodo(p.periodo))}</p>
-          <span class="cargado__n">${p.n_movimientos}</span>
-          <span class="cargado__monto">${FORMATO.format(p.ingresos + p.egresos)} ${escapar(p.moneda)}</span>
-        </div>`).join('')}`;
-  })
-  .catch(() => {
-    document.getElementById('cargados').innerHTML =
-      '<p class="bloque__nota">No se pudieron leer los extractos procesados. Genera <code>datos.json</code> con <code>python main.py --exportar</code>.</p>';
-  });
+    // La respuesta llega en trozos: se acumulan y se parte por saltos de línea,
+    // porque un evento puede quedar cortado entre dos trozos.
+    const lector = respuesta.body.getReader();
+    const decodificador = new TextDecoder();
+    let resto = '';
+
+    while (true) {
+      const { value, done } = await lector.read();
+      if (done) break;
+      resto += decodificador.decode(value, { stream: true });
+      const lineas = resto.split('\n');
+      resto = lineas.pop();
+      for (const linea of lineas) {
+        if (linea.trim()) manejarEvento(JSON.parse(linea), estado);
+      }
+    }
+  } catch (error) {
+    estado.cuerpo.insertAdjacentHTML('beforeend',
+      `<p class="avance__nota avance__nota--error">No se pudo completar el análisis: ${escapar(error.message)}</p>`);
+  } finally {
+    procesando = false;
+    boton.disabled = false;
+    boton.textContent = 'Analizar extractos';
+  }
+}
+
+document.getElementById('analizar').addEventListener('click', analizar);
 </script>
 </body>
 </html>

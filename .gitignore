@@ -22,3 +22,6 @@ Thumbs.db
 # Editores
 .vscode/
 .idea/
+
+# Vercel (enlace local al proyecto)
+.vercel/

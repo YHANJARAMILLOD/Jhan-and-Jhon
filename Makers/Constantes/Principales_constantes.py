@@ -52,6 +52,32 @@ def MODELO_EXTRACCION():
 def MODELO_REVISION():
     return "openai/gpt-oss-120b"
 
+def OPCIONES_EXTRACCION():
+    """
+    Opciones de la llamada a Ollama en la extracción.
+
+    num_ctx: el modelo admite 40960 pero Ollama arranca en 4096. Con el
+    system prompt completo, un texto largo y la respuesta, el contexto se
+    desbordaba y Ollama descartaba tokens del propio prompt ("context
+    shift"), dejando al modelo generando sin fin.
+
+    num_predict: techo duro. Si la generación se desboca, la respuesta se
+    corta, el JSON queda inválido y la línea falla rápido en vez de colgar.
+    """
+    return {"temperature": 0, "num_ctx": 8192, "num_predict": 2048}
+
+
+def PENSAR_EN_EXTRACCION():
+    # qwen3 razona en voz alta por defecto y eso multiplicaba por tres los
+    # tokens generados sin mejorar la extracción. Se apaga.
+    return False
+
+
+def TIMEOUT_OLLAMA():
+    # Segundos. Una petición colgada no debe bloquear el lote entero.
+    return 300
+
+
 def MODELO_EMBEDDINGS():
     # Modelo multilingüe de Ollama para los embeddings del RAG.
     return "bge-m3"
