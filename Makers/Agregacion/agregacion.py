@@ -38,7 +38,7 @@ def resumen_por_periodo(cliente_id, granularidad="mes", db_path=DB_PATH):
         SELECT
             COALESCE(substr(fecha, 1, {_LONGITUD_PERIODO[granularidad]}), '{PERIODO_SIN_FECHA}') AS periodo,
             moneda, tipo, COUNT(*) AS n, SUM(monto) AS total
-        FROM movimientos
+        FROM movimientos_vigentes
         WHERE cliente_id = ? AND monto IS NOT NULL
         GROUP BY periodo, moneda, tipo
         ORDER BY periodo, moneda
@@ -70,21 +70,26 @@ def resumen_por_periodo(cliente_id, granularidad="mes", db_path=DB_PATH):
     return sorted(periodos.values(), key=lambda r: (r["periodo"], r["moneda"] or ""))
 
 
-def top_categorias(cliente_id, tipo="egreso", limite=5, db_path=DB_PATH):
+def top_categorias(cliente_id, tipo="egreso", limite=5, db_path=DB_PATH, periodo=None):
     """
     Categorías ordenadas por monto total, con su peso sobre el total del
-    tipo y la moneda correspondientes.
+    tipo y la moneda correspondientes. Con `periodo` ("2026-10" o "2026"),
+    solo cuenta los movimientos de ese periodo.
     """
+    filtro, parametros = "", [cliente_id, tipo]
+    if periodo:
+        filtro = "AND substr(fecha, 1, ?) = ?"
+        parametros += [len(periodo), periodo]
     filas = _consultar(
         db_path,
-        """
+        f"""
         SELECT categoria, moneda, COUNT(*) AS n, SUM(monto) AS total
-        FROM movimientos
-        WHERE cliente_id = ? AND tipo = ? AND monto IS NOT NULL AND categoria IS NOT NULL
+        FROM movimientos_vigentes
+        WHERE cliente_id = ? AND tipo = ? AND monto IS NOT NULL AND categoria IS NOT NULL {filtro}
         GROUP BY categoria, moneda
         ORDER BY total DESC
         """,
-        (cliente_id, tipo),
+        parametros,
     )
 
     totales_por_moneda = {}
@@ -123,7 +128,7 @@ def detectar_anomalias(cliente_id, umbral_desviaciones=2.0, minimo_historico=5, 
         """
         SELECT movimiento_id, fecha, tipo, categoria, monto, moneda,
                nombre_destinatario, descripcion
-        FROM movimientos
+        FROM movimientos_vigentes
         WHERE cliente_id = ? AND monto IS NOT NULL AND tipo IS NOT NULL
         """,
         (cliente_id,),
@@ -158,39 +163,16 @@ def detectar_anomalias(cliente_id, umbral_desviaciones=2.0, minimo_historico=5, 
 
 
 def movimientos_para_revision(cliente_id, db_path=DB_PATH):
-    """Movimientos que el pipeline marcó para revisión humana."""
+    """Movimientos marcados para revisión que el titular todavía no resolvió."""
     filas = _consultar(
         db_path,
         """
         SELECT movimiento_id, fecha, tipo, categoria, monto, moneda,
                descripcion, motivo_revision
-        FROM movimientos
-        WHERE cliente_id = ? AND requiere_revision_humana = 1
+        FROM movimientos_efectivos
+        WHERE cliente_id = ? AND pendiente = 1
         ORDER BY fecha
         """,
         (cliente_id,),
     )
     return [dict(fila) for fila in filas]
-
-
-def resumen_cliente(cliente_id, granularidad="mes", db_path=DB_PATH):
-    """
-    Reúne todas las métricas de un cliente en un solo diccionario.
-
-    Es la entrada del generador de resumen en lenguaje natural: el LLM redacta
-    sobre estos números, nunca los calcula.
-    """
-    periodos = resumen_por_periodo(cliente_id, granularidad, db_path)
-    sin_fecha = sum(p["n_movimientos"] for p in periodos if p["periodo"] == PERIODO_SIN_FECHA)
-
-    return {
-        "cliente_id": cliente_id,
-        "granularidad": granularidad,
-        "total_movimientos": sum(p["n_movimientos"] for p in periodos),
-        "movimientos_sin_fecha": sin_fecha,
-        "periodos": periodos,
-        "top_categorias_egreso": top_categorias(cliente_id, "egreso", 5, db_path),
-        "top_categorias_ingreso": top_categorias(cliente_id, "ingreso", 5, db_path),
-        "anomalias": detectar_anomalias(cliente_id, db_path=db_path),
-        "para_revision": movimientos_para_revision(cliente_id, db_path),
-    }

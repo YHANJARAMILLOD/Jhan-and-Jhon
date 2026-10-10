@@ -1148,3 +1148,327 @@ body{
   .campo__entrada{ min-width:0; width:100%; }
   .campo{ flex:1 1 100%; }
 }
+
+/* ───────────────── Consulta sobre el periodo ───────────────── */
+
+.consulta{ margin-top:var(--paso-4); }
+
+.consulta__sugeridas{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
+  margin:0 0 var(--paso-2);
+}
+
+.sugerida{
+  font-family:var(--serie);
+  font-size:.88rem;
+  line-height:1.35;
+  text-align:left;
+  color:var(--sello);
+  background:transparent;
+  border:1px solid var(--sello);
+  padding:.4rem .8rem;
+  cursor:pointer;
+  transition:background-color .12s ease-out, color .12s ease-out;
+}
+
+.sugerida:hover:not(:disabled){ background:var(--sello); color:var(--papel); }
+
+.sugerida:disabled{
+  color:var(--tinta-suave);
+  border-color:var(--papel-borde);
+  cursor:not-allowed;
+}
+
+.consulta__hilo:not(:empty){ border-top:1px solid var(--tinta); }
+
+.intercambio{
+  padding:.85rem 0;
+  border-bottom:1px solid var(--papel-borde);
+}
+
+.intercambio__pregunta{
+  font-family:var(--estrecha);
+  font-size:.92rem;
+  color:var(--tinta-media);
+  margin:0 0 .35rem;
+  overflow-wrap:anywhere;
+}
+
+.intercambio__respuesta{
+  margin:0;
+  max-width:70ch;
+  line-height:1.58;
+  overflow-wrap:break-word;
+}
+
+/* Saludos, rechazos y avisos: presentes, pero sin el peso de una respuesta. */
+.intercambio--aviso .intercambio__respuesta,
+.intercambio--pendiente .intercambio__respuesta{ color:var(--tinta-media); }
+
+.intercambio__estado{
+  display:inline-block;
+  font-family:var(--estrecha);
+  font-size:.68rem;
+  font-weight:600;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--tinta-suave);
+  border:1px solid var(--papel-borde);
+  padding:0 .4rem;
+  margin-right:.5rem;
+  vertical-align:.1em;
+}
+
+.intercambio__nota{
+  font-family:var(--estrecha);
+  font-size:.8rem;
+  color:var(--tinta-suave);
+  margin:.4rem 0 0;
+}
+
+.consulta__form{
+  display:flex;
+  gap:var(--paso-1);
+  margin-top:var(--paso-2);
+}
+
+.consulta__entrada{
+  flex:1 1 auto;
+  min-width:0;
+  font-family:var(--serie);
+  font-size:.98rem;
+  color:var(--tinta);
+  background:var(--papel);
+  border:1px solid var(--papel-borde);
+  border-bottom:2px solid var(--tinta-media);
+  padding:.55rem .7rem;
+}
+
+.consulta__entrada:focus{ outline:none; border-bottom-color:var(--sello); }
+.consulta__entrada:disabled{ background:var(--papel-banda); cursor:not-allowed; }
+.consulta__entrada::placeholder{ color:var(--tinta-suave); }
+
+.consulta__pie{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  gap:.3rem var(--paso-2);
+  margin-top:.45rem;
+  font-family:var(--estrecha);
+  font-size:.78rem;
+  color:var(--tinta-suave);
+}
+
+.consulta__contador{ font-variant-numeric:tabular-nums; }
+.consulta__contador--lleno{ color:var(--tinta); font-weight:600; }
+
+@media (max-width:34rem){
+  .consulta__form{ flex-direction:column; }
+  .sugerida{ width:100%; }
+}
+
+/* ───────────────── Revisión del titular ───────────────── */
+
+.revision__item{
+  padding:1rem 0 1.1rem;
+  border-bottom:1px solid var(--papel-borde);
+}
+
+.revision__cabeza{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:.3rem var(--paso-2);
+  align-items:baseline;
+}
+
+.revision__veces{
+  font-family:var(--estrecha);
+  font-size:.82rem;
+  color:var(--tinta-media);
+}
+
+.revision__sin-monto{
+  font-family:var(--estrecha);
+  font-size:.86rem;
+  color:var(--tinta-suave);
+}
+
+.revision__pregunta{
+  margin:.7rem 0 .55rem;
+  font-size:.96rem;
+  max-width:70ch;
+}
+
+.revision__campos{
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--paso-1);
+  margin:.6rem 0 .7rem;
+}
+
+.revision__campos .campo{ flex:0 1 12rem; }
+.revision__campos .campo__entrada{ min-width:0; width:100%; }
+
+select.campo__entrada{
+  appearance:none;
+  background-image:linear-gradient(45deg, transparent 50%, var(--tinta-media) 50%),
+                   linear-gradient(135deg, var(--tinta-media) 50%, transparent 50%);
+  background-position:calc(100% - 15px) 55%, calc(100% - 10px) 55%;
+  background-size:5px 5px;
+  background-repeat:no-repeat;
+  padding-right:1.8rem;
+}
+
+.revision__acciones{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.6rem;
+}
+
+.revision__efecto{
+  font-family:var(--estrecha);
+  font-size:.84rem;
+  color:var(--tinta-media);
+  margin:.55rem 0 0;
+}
+
+.revision__error{
+  font-family:var(--estrecha);
+  font-size:.86rem;
+  color:var(--egreso);
+  margin:.45rem 0 0;
+}
+
+.revision__error:empty{ display:none; }
+
+.revision__aviso{
+  font-family:var(--estrecha);
+  font-size:.9rem;
+  color:var(--sello);
+  font-weight:600;
+  margin:0 0 var(--paso-1);
+}
+
+.revision__aviso:empty{ display:none; }
+
+.revision__estatico{
+  font-family:var(--estrecha);
+  font-size:.86rem;
+  color:var(--tinta-media);
+  margin:0 0 var(--paso-2);
+}
+
+.revision__subtitulo{
+  font-family:var(--estrecha);
+  font-size:.72rem;
+  font-weight:600;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--tinta-suave);
+  margin:var(--paso-3) 0 .5rem;
+}
+
+.revision__resuelto{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:.3rem var(--paso-1);
+  align-items:center;
+  padding:.45rem 0;
+  border-bottom:1px solid var(--papel-borde);
+}
+
+.revision__resuelto:first-child{ border-top:1px solid var(--papel-borde); }
+
+.revision__resuelto-desc{
+  font-size:.92rem;
+  color:var(--tinta-media);
+  min-width:0;
+  overflow-wrap:break-word;
+}
+
+.motivo--apagado{
+  border-color:var(--papel-borde);
+  color:var(--tinta-suave);
+}
+
+/* Descartado: sigue a la vista para auditoría, pero no cuenta. */
+.libro__fila--descartada .libro__desc,
+.libro__fila--descartada .libro__valor,
+.libro__fila--descartada .libro__cat{
+  text-decoration:line-through;
+  text-decoration-color:var(--tinta-suave);
+  color:var(--tinta-suave);
+}
+
+.libro__fila--descartada .signo{ color:var(--tinta-suave); }
+
+.lectura__vieja{
+  grid-column:1;
+  margin-top:var(--paso-1);
+  font-family:var(--estrecha);
+  font-size:.82rem;
+  color:var(--tinta-media);
+}
+
+.lectura__vieja p{ margin:0 0 .5rem; }
+.lectura__vieja .boton{ font-size:.82rem; padding:.35rem .8rem; }
+
+@media (max-width:34rem){
+  .revision__campos .campo{ flex:1 1 100%; }
+  .revision__acciones .boton{ flex:1 1 100%; }
+  .revision__resuelto{ grid-template-columns:1fr auto; }
+  .revision__resuelto .motivo{ grid-column:1; grid-row:2; justify-self:start; }
+}
+
+/* ───────────────── Selector de periodo ───────────────── */
+
+.selector{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  margin-top:.6rem;
+}
+
+.selector__etiqueta{
+  font-family:var(--estrecha);
+  font-size:.74rem;
+  font-weight:600;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--tinta-suave);
+}
+
+.selector__lista{
+  font-family:var(--estrecha);
+  font-size:1rem;
+  min-width:0;
+  max-width:100%;
+  padding-top:.35rem;
+  padding-bottom:.35rem;
+}
+
+.lectura__espera{
+  font-family:var(--estrecha);
+  color:var(--tinta-media);
+  margin:0;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.6rem;
+}
+
+.lectura[aria-busy="true"] .lectura__espera::before{
+  content:"";
+  width:.8rem; height:.8rem;
+  border:2px solid var(--papel-borde);
+  border-top-color:var(--sello);
+  border-radius:50%;
+  animation:girar .7s linear infinite;
+}
+
+/* Contraseña de un PDF, en su propia línea bajo el nombre del archivo */
+.adjuntos__fila--pdf{ grid-template-rows:auto auto; }
+.adjuntos__clave{ grid-column:2 / -1; }
+.adjuntos__clave .campo__entrada{ width:100%; max-width:22rem; min-width:0; font-size:.9rem; padding:.35rem .6rem; }

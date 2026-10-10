@@ -599,12 +599,12 @@ PEGAR AQUÍ LA RESPUESTA REAL
 | Validación de la revisión | ✅ Implementada |
 | Anonimización de nombres | 🟡 Cliente anonimizado también en la descripción; no cubre `entidad` ni otros nombres |
 | RAG de ejemplos para el revisor | ✅ Implementado (base semilla + ejemplos confirmados) |
-| Persistencia en SQLite | ✅ Integrada en `main.py` (no guarda `requiere_revision_humana` ni `motivo_revision`) |
-| Filtro de Prompt Injection por reglas | ❌ Pendiente |
+| Persistencia en SQLite | ✅ Movimientos, revisiones del titular y lecturas; ids estables por línea |
+| Filtro de Prompt Injection por reglas | ✅ `Seguridad/inyeccion.py`, compartido por pipeline y asistente |
 | Pruebas automatizadas (pytest, 5 casos) | ✅ Implementadas |
 | Evals con dataset amplio y métricas | ❌ Pendiente |
 | Resultados de las pruebas de Prompt Injection | ❌ Pendiente |
-| Entrada de datos real (CLI, archivo, PDF) | 🟡 CLI y archivo de texto; PDF pendiente |
+| Entrada de datos real (CLI, archivo, PDF) | 🟡 Texto en cualquier codificación, CSV y PDF con contraseña; falta calibrar con extractos reales |
 
 ---
 
@@ -615,13 +615,13 @@ Problemas conocidos en el código actual:
 * [x] ~~`anonimizar_movimiento` modifica el objeto original~~: ahora trabaja sobre una copia (`copy.deepcopy`).
 * [x] ~~Anonimización incompleta en `descripcion`~~: los nombres de remitente y destinatario también se enmascaran en la descripción. Otros nombres que solo aparezcan en la descripción, o que estén en `entidad`, siguen sin enmascararse.
 * [x] ~~El revisor recibe nombres anonimizados~~: ahora solo se anonimiza al cliente y la contraparte llega completa.
-* [ ] **Parseo frágil de las respuestas.** `json.loads` falla si el modelo devuelve Markdown, texto adicional o bloques de razonamiento (`<think>` en Qwen3).
-* [ ] **Groq es obligatorio al importar.** `Modelos/consultas_llm.py` lanza error si falta `GROQ_API_KEY`, incluso si solo se quiere usar la extracción local.
-* [ ] **El almacenamiento no guarda** `requiere_revision_humana` ni `motivo_revision`, y `_CAMPOS_MOVIMIENTO` no se usa.
+* [x] ~~Parseo frágil de las respuestas~~: el extractor usa salida estructurada (`format=<JSON Schema>`), `think=False` y `json.loads(strict=False)`.
+* [x] ~~Groq es obligatorio al importar~~: el cliente se crea la primera vez que se usa.
+* [x] ~~El almacenamiento no guarda `requiere_revision_humana` ni `motivo_revision`~~.
 * [ ] **Solo se ejecuta desde `Makers/`.** Faltan `__init__.py` para ejecutarlo como paquete (`python -m Makers.main`).
 * [x] ~~`requirements.txt` en UTF-16 y con dependencias ajenas~~: reducido a las dependencias directas.
 * [x] ~~Archivos generados versionados~~: `.gitignore` actualizado y `__pycache__/` y `.DS_Store` retirados del repositorio.
-* [ ] **Resultados no deterministas.** Aun con `temperature=0`, el mismo caso puede pasar en una ejecución y fallar en otra (por ejemplo, omitir `formato_numerico_ambiguo` o dejar un campo en `null` sin motivo).
+* [ ] **Resultados no deterministas.** Aun con `temperature=0`, el mismo caso puede variar. Los fallos vistos (motivos inventados, `formato_numerico_ambiguo` omitido, inyección sin marcar, año inventado en fechas "02 NOV") ya los corrigen reglas deterministas; puede haber otros.
 * [ ] **Categorías duplicadas.** La lista de categorías está escrita en las constantes y en los dos prompts; conviene generarla desde `CATEGORIAS_PERMITIDAS`.
 
 ---
@@ -629,28 +629,28 @@ Problemas conocidos en el código actual:
 # 🔮 Mejoras futuras
 
 ### Calidad y robustez
-* [ ] Salida estructurada nativa: `format=<JSON Schema>` en Ollama y `response_format` en Groq.
+* [x] ~~Salida estructurada nativa en Ollama~~ (`format=<JSON Schema>`).
 * [ ] Validación con **Pydantic** o JSON Schema.
 * [ ] Reintentos cuando la respuesta no es JSON válido.
 * [ ] Logging (`loguru`) en lugar de `print`.
-* [ ] Tests unitarios sin LLM para validaciones (anonimización y RAG ya los tienen).
+* [x] ~~Tests unitarios sin LLM para validaciones~~.
 * [ ] Ejecutar cada caso varias veces y medir la tasa de acierto, en lugar de un único intento.
 * [ ] **Evals:** dataset de movimientos etiquetados y de ataques para medir exactitud y resistencia automáticamente.
 * [ ] Comparar diferentes modelos locales.
 
 ### Seguridad y privacidad
-* [ ] Filtro de Prompt Injection por reglas antes del LLM.
+* [x] ~~Filtro de Prompt Injection por reglas antes del LLM~~.
 * [ ] Anonimizar también descripción, números de cuenta, documentos y teléfonos.
 * [ ] Opción de revisión 100 % local (sin Groq).
 
 ### Funcionalidad
 * [x] ~~Integrar el almacenamiento SQLite en el flujo principal.~~
 * [x] ~~Entrada por línea de comandos o archivo.~~
-* [ ] Extracción automática desde PDF y extractos bancarios completos.
+* [x] ~~Extracción desde PDF y extractos completos~~ (falta calibrar con extractos reales).
 * [ ] Lectura de correos electrónicos de notificaciones bancarias.
-* [ ] Cola de revisión humana para los movimientos marcados.
-* [ ] API (por ejemplo FastAPI) o interfaz web.
-* [ ] Dashboard financiero, balances mensuales y alertas de gastos.
+* [x] ~~Cola de revisión humana~~: confirmar, descartar, duplicados, corregir y deshacer, con efecto en los cálculos.
+* [x] ~~Interfaz web~~: servidor local Flask (`Makers/servidor.py`).
+* [x] ~~Dashboard financiero con selector de mes, lectura por periodo y asistente de preguntas~~.
 * [ ] Identificación de posibles fugas de dinero.
 
 ---

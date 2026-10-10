@@ -266,3 +266,23 @@ def formatear_ejemplos(ejemplos_por_movimiento):
     if not grupos:
         return None
     return json.dumps(grupos, ensure_ascii=False, indent=2)
+
+
+def quitar_ejemplo(ejemplo_id, db_path=RAG_DB_PATH):
+    """
+    Retira un ejemplo agregado por una persona, con su embedding.
+
+    Solo borra los de origen "humano": deshacer una corrección no puede
+    llevarse por delante un ejemplo semilla.
+    """
+    conexion = _obtener_conexion(db_path)
+    try:
+        borrados = conexion.execute(
+            "DELETE FROM ejemplos WHERE ejemplo_id = ? AND origen = 'humano'", (ejemplo_id,)
+        ).rowcount
+        if borrados:
+            conexion.execute("DELETE FROM embeddings WHERE ejemplo_id = ?", (ejemplo_id,))
+        conexion.commit()
+    finally:
+        conexion.close()
+    return bool(borrados)

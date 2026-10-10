@@ -30,3 +30,29 @@ Usa solo las cifras que aparecen aquí. No calcules ni estimes ninguna cifra adi
 <metricas>
 {json_metricas}
 </metricas>"""
+
+
+def PROMPT_ENRUTAR_PREGUNTA(historial_texto, pregunta):
+    return f"""Analiza la última pregunta del usuario.
+
+<historial>
+{historial_texto or "(sin historial)"}
+</historial>
+
+<pregunta>
+{pregunta}
+</pregunta>
+
+Devuelve solo el JSON."""
+
+
+def PROMPT_RESPONDER_PREGUNTA(pregunta, datos_json):
+    return f"""Responde la pregunta del titular usando solo las cifras de los datos.
+
+<pregunta>
+{pregunta}
+</pregunta>
+
+<datos>
+{datos_json}
+</datos>"""

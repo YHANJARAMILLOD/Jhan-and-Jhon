@@ -1,910 +1,655 @@
 {
-  "generado": "2026-10-09T18:09:47.073134+00:00",
-  "cliente_id": "cliente_demo",
+  "generado": "2026-10-10T18:15:55.480611+00:00",
+  "cliente_id": "mi_cliente",
   "granularidad": "mes",
   "moneda_principal": "COP",
-  "totales": [
-    {
-      "moneda": "COP",
-      "ingresos": 10650000.0,
-      "egresos": 18326300.0,
-      "balance": -7676300.0,
-      "n_movimientos": 39
-    }
+  "periodos_disponibles": [
+    "2026-09",
+    "2026-10"
   ],
-  "periodos": [
-    {
-      "periodo": "2026-07",
-      "moneda": "COP",
-      "ingresos": 2500000.0,
-      "egresos": 1943900.0,
-      "balance": 556100.0,
-      "n_movimientos": 8
+  "vistas": {
+    "todo": {
+      "periodo": "todo",
+      "totales": [
+        {
+          "moneda": "COP",
+          "ingresos": 2800000.0,
+          "egresos": 6706600.0,
+          "balance": -3906600.0,
+          "n_movimientos": 12
+        }
+      ],
+      "periodos": [
+        {
+          "periodo": "2026-09",
+          "moneda": "COP",
+          "ingresos": 2800000.0,
+          "egresos": 0.0,
+          "balance": 2800000.0,
+          "n_movimientos": 1
+        },
+        {
+          "periodo": "2026-10",
+          "moneda": "COP",
+          "ingresos": 0.0,
+          "egresos": 6706600.0,
+          "balance": -6706600.0,
+          "n_movimientos": 11
+        }
+      ],
+      "categorias_egreso": [
+        {
+          "categoria": "compras",
+          "moneda": "COP",
+          "total": 4320000.0,
+          "n_movimientos": 2,
+          "porcentaje": 64.4
+        },
+        {
+          "categoria": "vivienda",
+          "moneda": "COP",
+          "total": 1900000.0,
+          "n_movimientos": 2,
+          "porcentaje": 28.3
+        },
+        {
+          "categoria": "transferencia_persona",
+          "moneda": "COP",
+          "total": 250000.0,
+          "n_movimientos": 1,
+          "porcentaje": 3.7
+        },
+        {
+          "categoria": "entretenimiento",
+          "moneda": "COP",
+          "total": 62800.0,
+          "n_movimientos": 2,
+          "porcentaje": 0.9
+        },
+        {
+          "categoria": "salud",
+          "moneda": "COP",
+          "total": 62000.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.9
+        },
+        {
+          "categoria": "servicios",
+          "moneda": "COP",
+          "total": 58900.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.9
+        },
+        {
+          "categoria": "alimentacion",
+          "moneda": "COP",
+          "total": 34500.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.5
+        },
+        {
+          "categoria": "transporte",
+          "moneda": "COP",
+          "total": 18400.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.3
+        }
+      ],
+      "categorias_ingreso": [
+        {
+          "categoria": "ingreso_laboral",
+          "moneda": "COP",
+          "total": 2800000.0,
+          "n_movimientos": 1,
+          "porcentaje": 100.0
+        }
+      ],
+      "anomalias": [
+        {
+          "movimiento_id": "a7c6b50d9118e2fcb8292076e2872b6dc6faafc69a629a28d82417e7502e3551",
+          "fecha": "2026-10-20",
+          "tipo": "egreso",
+          "categoria": "compras",
+          "monto": 4200000.0,
+          "moneda": "COP",
+          "nombre_destinatario": null,
+          "descripcion": "Compra de computador portatil en Falabella",
+          "desviaciones": 2.89,
+          "media_del_grupo": 609690.91,
+          "veces_la_media": 6.9
+        }
+      ],
+      "total_movimientos": 13,
+      "movimientos_descartados": 0,
+      "movimientos_sin_monto": 1,
+      "movimientos_sin_fecha": 0,
+      "monto_pendiente": 1934500.0
     },
-    {
-      "periodo": "2026-08",
-      "moneda": "COP",
-      "ingresos": 2850000.0,
-      "egresos": 3252900.0,
-      "balance": -402900.0,
-      "n_movimientos": 10
-    },
-    {
+    "2026-09": {
       "periodo": "2026-09",
-      "moneda": "COP",
-      "ingresos": 5300000.0,
-      "egresos": 6422900.0,
-      "balance": -1122900.0,
-      "n_movimientos": 10
+      "totales": [
+        {
+          "moneda": "COP",
+          "ingresos": 2800000.0,
+          "egresos": 0.0,
+          "balance": 2800000.0,
+          "n_movimientos": 1
+        }
+      ],
+      "periodos": [
+        {
+          "periodo": "2026-09",
+          "moneda": "COP",
+          "ingresos": 2800000.0,
+          "egresos": 0.0,
+          "balance": 2800000.0,
+          "n_movimientos": 1
+        }
+      ],
+      "categorias_egreso": [],
+      "categorias_ingreso": [
+        {
+          "categoria": "ingreso_laboral",
+          "moneda": "COP",
+          "total": 2800000.0,
+          "n_movimientos": 1,
+          "porcentaje": 100.0
+        }
+      ],
+      "anomalias": [],
+      "total_movimientos": 1,
+      "movimientos_descartados": 0,
+      "movimientos_sin_monto": 0,
+      "movimientos_sin_fecha": 0,
+      "monto_pendiente": 0
     },
-    {
+    "2026-10": {
       "periodo": "2026-10",
-      "moneda": "COP",
-      "ingresos": 0.0,
-      "egresos": 6706600.0,
-      "balance": -6706600.0,
-      "n_movimientos": 11
+      "totales": [
+        {
+          "moneda": "COP",
+          "ingresos": 0.0,
+          "egresos": 6706600.0,
+          "balance": -6706600.0,
+          "n_movimientos": 11
+        }
+      ],
+      "periodos": [
+        {
+          "periodo": "2026-10",
+          "moneda": "COP",
+          "ingresos": 0.0,
+          "egresos": 6706600.0,
+          "balance": -6706600.0,
+          "n_movimientos": 11
+        }
+      ],
+      "categorias_egreso": [
+        {
+          "categoria": "compras",
+          "moneda": "COP",
+          "total": 4320000.0,
+          "n_movimientos": 2,
+          "porcentaje": 64.4
+        },
+        {
+          "categoria": "vivienda",
+          "moneda": "COP",
+          "total": 1900000.0,
+          "n_movimientos": 2,
+          "porcentaje": 28.3
+        },
+        {
+          "categoria": "transferencia_persona",
+          "moneda": "COP",
+          "total": 250000.0,
+          "n_movimientos": 1,
+          "porcentaje": 3.7
+        },
+        {
+          "categoria": "entretenimiento",
+          "moneda": "COP",
+          "total": 62800.0,
+          "n_movimientos": 2,
+          "porcentaje": 0.9
+        },
+        {
+          "categoria": "salud",
+          "moneda": "COP",
+          "total": 62000.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.9
+        },
+        {
+          "categoria": "servicios",
+          "moneda": "COP",
+          "total": 58900.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.9
+        },
+        {
+          "categoria": "alimentacion",
+          "moneda": "COP",
+          "total": 34500.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.5
+        },
+        {
+          "categoria": "transporte",
+          "moneda": "COP",
+          "total": 18400.0,
+          "n_movimientos": 1,
+          "porcentaje": 0.3
+        }
+      ],
+      "categorias_ingreso": [],
+      "anomalias": [
+        {
+          "movimiento_id": "a7c6b50d9118e2fcb8292076e2872b6dc6faafc69a629a28d82417e7502e3551",
+          "fecha": "2026-10-20",
+          "tipo": "egreso",
+          "categoria": "compras",
+          "monto": 4200000.0,
+          "moneda": "COP",
+          "nombre_destinatario": null,
+          "descripcion": "Compra de computador portatil en Falabella",
+          "desviaciones": 2.89,
+          "media_del_grupo": 609690.91,
+          "veces_la_media": 6.9
+        }
+      ],
+      "total_movimientos": 11,
+      "movimientos_descartados": 0,
+      "movimientos_sin_monto": 0,
+      "movimientos_sin_fecha": 0,
+      "monto_pendiente": 1934500.0
     }
-  ],
-  "categorias_egreso": [
-    {
-      "categoria": "compras",
-      "moneda": "COP",
-      "total": 9120000.0,
-      "n_movimientos": 3,
-      "porcentaje": 49.8
-    },
-    {
-      "categoria": "vivienda",
-      "moneda": "COP",
-      "total": 4600000.0,
-      "n_movimientos": 5,
-      "porcentaje": 25.1
-    },
-    {
-      "categoria": "alimentacion",
-      "moneda": "COP",
-      "total": 1604500.0,
-      "n_movimientos": 6,
-      "porcentaje": 8.8
-    },
-    {
-      "categoria": "educacion",
-      "moneda": "COP",
-      "total": 1200000.0,
-      "n_movimientos": 1,
-      "porcentaje": 6.5
-    },
-    {
-      "categoria": "servicios",
-      "moneda": "COP",
-      "total": 500900.0,
-      "n_movimientos": 4,
-      "porcentaje": 2.7
-    },
-    {
-      "categoria": "transferencia_persona",
-      "moneda": "COP",
-      "total": 450000.0,
-      "n_movimientos": 2,
-      "porcentaje": 2.5
-    },
-    {
-      "categoria": "salud",
-      "moneda": "COP",
-      "total": 337000.0,
-      "n_movimientos": 3,
-      "porcentaje": 1.8
-    },
-    {
-      "categoria": "transporte",
-      "moneda": "COP",
-      "total": 253400.0,
-      "n_movimientos": 4,
-      "porcentaje": 1.4
-    },
-    {
-      "categoria": "entretenimiento",
-      "moneda": "COP",
-      "total": 200500.0,
-      "n_movimientos": 5,
-      "porcentaje": 1.1
-    },
-    {
-      "categoria": "otros",
-      "moneda": "COP",
-      "total": 60000.0,
-      "n_movimientos": 1,
-      "porcentaje": 0.3
-    }
-  ],
-  "categorias_ingreso": [
-    {
-      "categoria": "ingreso_laboral",
-      "moneda": "COP",
-      "total": 10300000.0,
-      "n_movimientos": 4,
-      "porcentaje": 96.7
-    },
-    {
-      "categoria": "otros",
-      "moneda": "COP",
-      "total": 350000.0,
-      "n_movimientos": 1,
-      "porcentaje": 3.3
-    }
-  ],
-  "anomalias": [
-    {
-      "movimiento_id": "ce635afc24830126f8ae749103e3df80be3862ce46258f2c7d5a4db67eab35f0",
-      "fecha": "2026-09-18",
-      "tipo": "egreso",
-      "categoria": "compras",
-      "monto": 4800000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Falabella",
-      "descripcion": "Compra de equipo portatil",
-      "desviaciones": 4.01,
-      "media_del_grupo": 539008.82,
-      "veces_la_media": 8.9
-    },
-    {
-      "movimiento_id": "71dc63a4cf8f4e7e5d088b84cafb54318fedf76d95ce9e1f2b6c4d9da3cbcd98",
-      "fecha": "2026-10-20",
-      "tipo": "egreso",
-      "categoria": "compras",
-      "monto": 4200000.0,
-      "moneda": "COP",
-      "nombre_destinatario": null,
-      "descripcion": "Compra de computador portatil en Falabella",
-      "desviaciones": 3.45,
-      "media_del_grupo": 539008.82,
-      "veces_la_media": 7.8
-    }
-  ],
-  "para_revision": [
-    {
-      "movimiento_id": "ba248e48edb8251b6809ef283ebc9cfb2808effbd6e0106e5bedeb31480f55ec",
-      "fecha": null,
-      "tipo": null,
-      "categoria": null,
-      "monto": null,
-      "moneda": null,
-      "descripcion": "Me llego una notificacion del banco pero no dice cuanto fue ni de que",
-      "motivo_revision": "datos_insuficientes"
-    },
-    {
-      "movimiento_id": "ce635afc24830126f8ae749103e3df80be3862ce46258f2c7d5a4db67eab35f0",
-      "fecha": "2026-09-18",
-      "tipo": "egreso",
-      "categoria": "compras",
-      "monto": 4800000.0,
-      "moneda": "COP",
-      "descripcion": "Compra de equipo portatil",
-      "motivo_revision": "datos_insuficientes"
-    },
-    {
-      "movimiento_id": "e33e57b5fc360e1cd317f8e5bb0637d8d61fbde22177c2897c0b525c7b5a5f17",
-      "fecha": "2026-09-21",
-      "tipo": "egreso",
-      "categoria": "otros",
-      "monto": 60000.0,
-      "moneda": "COP",
-      "descripcion": "Pago sin descripcion clara",
-      "motivo_revision": "datos_insuficientes"
-    },
-    {
-      "movimiento_id": "30bde4f84e3437ba90ffd7231e537fac22fbc028a47d2939188932d19b340252",
-      "fecha": "2026-10-07",
-      "tipo": "egreso",
-      "categoria": "alimentacion",
-      "monto": 34500.0,
-      "moneda": "COP",
-      "descripcion": "Compra en Rappi",
-      "motivo_revision": "formato_numerico_ambiguo"
-    },
-    {
-      "movimiento_id": "4fab1edbb24d6ab35a14455c1141dea95955a62ebe55ab6c9798280d1ed61e0d",
-      "fecha": "2026-10-16",
-      "tipo": "egreso",
-      "categoria": "vivienda",
-      "monto": 950000.0,
-      "moneda": "COP",
-      "descripcion": "Pago de arriendo",
-      "motivo_revision": "posible_duplicado"
-    },
-    {
-      "movimiento_id": "4d71ee716e02fb15428cd3e0991c17af928b4572521d92a307016624f91405a9",
-      "fecha": "2026-10-16",
-      "tipo": "egreso",
-      "categoria": "vivienda",
-      "monto": 950000.0,
-      "moneda": "COP",
-      "descripcion": "Pago de arriendo",
-      "motivo_revision": "posible_duplicado"
-    }
-  ],
+  },
+  "revision": {
+    "pendientes": [
+      {
+        "clave": "f262f72264849a3f08c2fdaf94a4274025b792db0625d17409d27e91a1b21f02",
+        "caso": "individual",
+        "ids": [
+          "f262f72264849a3f08c2fdaf94a4274025b792db0625d17409d27e91a1b21f02"
+        ],
+        "repeticiones": 1,
+        "motivos": [
+          "posible_intento_de_manipulacion"
+        ],
+        "movimiento": {
+          "fecha": "2026-10-07",
+          "tipo": "egreso",
+          "categoria": "alimentacion",
+          "monto": 34500.0,
+          "moneda": "COP",
+          "descripcion": "Compra en Rappi",
+          "contraparte": "Rappi"
+        },
+        "faltantes": [],
+        "decisiones": [
+          null
+        ]
+      },
+      {
+        "clave": "2a8d8910c77831909d2be84fbc74e55ee4e69045835f6e0580b2e0d1789b5f94",
+        "caso": "duplicado",
+        "ids": [
+          "2a8d8910c77831909d2be84fbc74e55ee4e69045835f6e0580b2e0d1789b5f94",
+          "3d3a90e0092f6bfb6ef22dd942b953ce73c793b838273fcee3d1f5b342415a15"
+        ],
+        "repeticiones": 2,
+        "motivos": [
+          "posible_duplicado"
+        ],
+        "movimiento": {
+          "fecha": "2026-10-16",
+          "tipo": "egreso",
+          "categoria": "vivienda",
+          "monto": 950000.0,
+          "moneda": "COP",
+          "descripcion": "Pago de arriendo",
+          "contraparte": "Inmobiliaria Centro"
+        },
+        "faltantes": [],
+        "decisiones": [
+          null,
+          null
+        ]
+      },
+      {
+        "clave": "1dc86da7407183bde0141a5090ab402f1ab6b38f8d59ce1613eea5ffb83ea4d7",
+        "caso": "individual",
+        "ids": [
+          "1dc86da7407183bde0141a5090ab402f1ab6b38f8d59ce1613eea5ffb83ea4d7"
+        ],
+        "repeticiones": 1,
+        "motivos": [
+          "datos_insuficientes"
+        ],
+        "movimiento": {
+          "fecha": null,
+          "tipo": null,
+          "categoria": null,
+          "monto": null,
+          "moneda": null,
+          "descripcion": "Me llego una notificacion del banco pero no dice cuanto fue ni de que",
+          "contraparte": null
+        },
+        "faltantes": [
+          "monto",
+          "tipo",
+          "moneda",
+          "categoria",
+          "fecha"
+        ],
+        "decisiones": [
+          null
+        ]
+      }
+    ],
+    "resueltos": []
+  },
   "movimientos": [
     {
-      "movimiento_id": "71dc63a4cf8f4e7e5d088b84cafb54318fedf76d95ce9e1f2b6c4d9da3cbcd98",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "a7c6b50d9118e2fcb8292076e2872b6dc6faafc69a629a28d82417e7502e3551",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:26:22.265058+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": null,
+      "entidad": "falabella",
+      "descripcion": "Compra de computador portatil en Falabella",
       "tipo": "egreso",
       "categoria": "compras",
       "monto": 4200000.0,
       "moneda": "COP",
-      "nombre_destinatario": null,
-      "entidad": "falabella",
       "fecha": "2026-10-20",
-      "descripcion": "Compra de computador portatil en Falabella",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "6b49913efc60a07f15e5379c1fe20b975311b67ff32e300dd0af3542dc40c5a1",
+      "numero_linea": 11,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "4fab1edbb24d6ab35a14455c1141dea95955a62ebe55ab6c9798280d1ed61e0d",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "3d3a90e0092f6bfb6ef22dd942b953ce73c793b838273fcee3d1f5b342415a15",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:26:12.426828+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": "Inmobiliaria Centro",
+      "entidad": null,
+      "descripcion": "Pago de arriendo",
       "tipo": "egreso",
       "categoria": "vivienda",
       "monto": 950000.0,
       "moneda": "COP",
-      "nombre_destinatario": "Inmobiliaria Centro",
-      "entidad": null,
       "fecha": "2026-10-16",
-      "descripcion": "Pago de arriendo",
       "requiere_revision_humana": true,
-      "motivo_revision": "posible_duplicado"
+      "motivo_revision": "posible_duplicado",
+      "linea_id": "ba5cdef1797d151959d7b7d891e971227f59f318989b346ac464f555f401c4ab",
+      "numero_linea": 9,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": true
     },
     {
-      "movimiento_id": "4d71ee716e02fb15428cd3e0991c17af928b4572521d92a307016624f91405a9",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "2a8d8910c77831909d2be84fbc74e55ee4e69045835f6e0580b2e0d1789b5f94",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:26:12.426828+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": "Inmobiliaria Centro",
+      "entidad": null,
+      "descripcion": "Pago de arriendo",
       "tipo": "egreso",
       "categoria": "vivienda",
       "monto": 950000.0,
       "moneda": "COP",
-      "nombre_destinatario": "Inmobiliaria Centro",
-      "entidad": null,
       "fecha": "2026-10-16",
-      "descripcion": "Pago de arriendo",
       "requiere_revision_humana": true,
-      "motivo_revision": "posible_duplicado"
+      "motivo_revision": "posible_duplicado",
+      "linea_id": "ba5cdef1797d151959d7b7d891e971227f59f318989b346ac464f555f401c4ab",
+      "numero_linea": 9,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": true
     },
     {
-      "movimiento_id": "a4527efbf3127075c6d220c1f72a78814955df9ba8ce188d592358cab96e2a2a",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "bab657c94223f13fb398e7dad7e46ba26d40874ad3b9381e4dd9d5dbdf931cbc",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:25:54.016284+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": "Maria Gonzalez",
+      "entidad": null,
+      "descripcion": "Transferencia a Maria Gonzalez",
       "tipo": "egreso",
       "categoria": "transferencia_persona",
       "monto": 250000.0,
       "moneda": "COP",
-      "nombre_destinatario": "Maria Gonzalez",
-      "entidad": null,
       "fecha": "2026-10-15",
-      "descripcion": "Transferencia a Maria Gonzalez",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "61547e087642b1d5de21c752deadf5e1a076a7fd84e970d69e8f5aa2c9d2b731",
+      "numero_linea": 7,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "48e8acc4b5ce9a0996085cac1ce421032bbef14e01d4e2b9d4b119bef0126dc4",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "8fe941e2f5facba4d525e40c089b2ec541449e26d391d35df1fbcf761d35a240",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:25:45.036435+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": null,
+      "entidad": "servicios",
+      "descripcion": "Suscripcion Netflix",
       "tipo": "egreso",
       "categoria": "entretenimiento",
       "monto": 45900.0,
       "moneda": "COP",
-      "nombre_destinatario": null,
-      "entidad": "servicios",
       "fecha": "2026-10-12",
-      "descripcion": "Suscripcion Netflix",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "58716b7a24c308527ec5d71a9011c5222d9c3f98eb84927aee15366bd5dfd882",
+      "numero_linea": 5,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "fce007ccf9d491ac4f486e526e40af28e2321c56f2fa2003c5704677dff23ded",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "1d535c1769c9b2975a621e71bbdf6a5f232df495397d68f0ade7e1ec5fc67351",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:25:45.036435+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": null,
+      "entidad": "servicios",
+      "descripcion": "Suscripcion Spotify",
       "tipo": "egreso",
       "categoria": "entretenimiento",
       "monto": 16900.0,
       "moneda": "COP",
-      "nombre_destinatario": null,
-      "entidad": "servicios",
       "fecha": "2026-10-12",
-      "descripcion": "Suscripcion Spotify",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "58716b7a24c308527ec5d71a9011c5222d9c3f98eb84927aee15366bd5dfd882",
+      "numero_linea": 5,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "91832d3914b3b8615e2fae94eca9504410767632462b8637b0007c441bc3c197",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "5c9ca550fe21ce9ab14c3b9b67fbb88a901cacf95c710086cfcd7d01446e048d",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:25:28.272453+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": null,
+      "entidad": "Farmacia Cruz Verde",
+      "descripcion": "Compra en Farmacia Cruz Verde",
       "tipo": "egreso",
       "categoria": "salud",
       "monto": 62000.0,
       "moneda": "COP",
-      "nombre_destinatario": null,
-      "entidad": "Farmacia Cruz Verde",
       "fecha": "2026-10-11",
-      "descripcion": "Compra en Farmacia Cruz Verde",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "7e684716f170f659efda3adbb5e045d4e0c332fa991be3760e65cb1eb3f63977",
+      "numero_linea": 3,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "602a53861d1f579a3f0cfde0e889c6267f0e88113944a5b4d96c78b89bef27a0",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-a83e3bbe32c5b249",
-      "fecha_ingesta": "2026-10-09T18:09:47.068916+00:00",
+      "movimiento_id": "f17d4370efd9a0f24aac9715ab663b0c8c3c79553bf5578860a65a3f1332bddc",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-f0694a62afbf44f5",
+      "fecha_ingesta": "2026-10-10T17:25:28.272453+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": null,
+      "entidad": "Uber",
+      "descripcion": "Viaje en Uber",
       "tipo": "egreso",
       "categoria": "transporte",
       "monto": 18400.0,
       "moneda": "COP",
-      "nombre_destinatario": null,
-      "entidad": "Uber",
       "fecha": "2026-10-10",
-      "descripcion": "Viaje en Uber",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "7e684716f170f659efda3adbb5e045d4e0c332fa991be3760e65cb1eb3f63977",
+      "numero_linea": 3,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "30bde4f84e3437ba90ffd7231e537fac22fbc028a47d2939188932d19b340252",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-0fa5b0e9c60a911c",
-      "fecha_ingesta": "2026-10-09T18:03:09.605643+00:00",
+      "movimiento_id": "f262f72264849a3f08c2fdaf94a4274025b792db0625d17409d27e91a1b21f02",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-7af63655414131b0",
+      "fecha_ingesta": "2026-10-10T17:28:30.679217+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": null,
+      "entidad": "Rappi",
+      "descripcion": "Compra en Rappi",
       "tipo": "egreso",
       "categoria": "alimentacion",
       "monto": 34500.0,
       "moneda": "COP",
-      "nombre_destinatario": null,
-      "entidad": "Rappi",
       "fecha": "2026-10-07",
-      "descripcion": "Compra en Rappi",
       "requiere_revision_humana": true,
-      "motivo_revision": "formato_numerico_ambiguo"
+      "motivo_revision": "posible_intento_de_manipulacion",
+      "linea_id": "3f33b926514b1388ad9211e58423afd4e4b165f5b0355d1a6421d7f517c44274",
+      "numero_linea": 8,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": true
     },
     {
-      "movimiento_id": "e02408281d4a5885e0b178c447c87c82fd295ee4693cab7cf7f1338dc2e719b1",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-0fa5b0e9c60a911c",
-      "fecha_ingesta": "2026-10-09T18:03:09.605643+00:00",
+      "movimiento_id": "163b965a1257a939bfa6cee46bca7bc6fda8f9032eaa072932d1054b93c784d2",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-7af63655414131b0",
+      "fecha_ingesta": "2026-10-10T17:28:11.563795+00:00",
       "nombre_remitente": "Ban********",
+      "nombre_destinatario": "Claro",
+      "entidad": null,
+      "descripcion": "Pago de 58.900 COP a Claro",
       "tipo": "egreso",
       "categoria": "servicios",
       "monto": 58900.0,
       "moneda": "COP",
-      "nombre_destinatario": "Claro",
-      "entidad": null,
       "fecha": "2026-10-05",
-      "descripcion": "Pago de 58.900 COP a Claro",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "b05064825db29843ae544c56f89300a68cb61914e00e1218c2d732db62323b1d",
+      "numero_linea": 4,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "255199652e6459081842b38661d858f96039b181b5799532c31c8ed6e171f700",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-0fa5b0e9c60a911c",
-      "fecha_ingesta": "2026-10-09T18:03:09.605643+00:00",
+      "movimiento_id": "d5672060a5e19c30e37106160b7291b17a52a0d66404876dc66634bf826ecd52",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-7af63655414131b0",
+      "fecha_ingesta": "2026-10-10T17:28:11.563795+00:00",
       "nombre_remitente": "Ban********",
+      "nombre_destinatario": "Exito Poblado",
+      "entidad": null,
+      "descripcion": "Compra por 120.000 COP en Exito Poblado",
       "tipo": "egreso",
       "categoria": "compras",
       "monto": 120000.0,
       "moneda": "COP",
-      "nombre_destinatario": "Exito Poblado",
-      "entidad": null,
       "fecha": "2026-10-03",
-      "descripcion": "Compra por 120.000 COP en Exito Poblado",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "b05064825db29843ae544c56f89300a68cb61914e00e1218c2d732db62323b1d",
+      "numero_linea": 4,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "1e90cc2d4f54c39dd5998c1ee32df2fdbaf95a69a323b1c57e42a6fe66c7e4bc",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Acme SAS",
-      "tipo": "ingreso",
-      "categoria": "ingreso_laboral",
-      "monto": 2500000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Yha*********",
-      "entidad": null,
-      "fecha": "2026-09-30",
-      "descripcion": "Pago de nomina",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "addf76ac0a9844668d3e23c76803fe4b95766fceac3909e649d3d9f07c6d8a48",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-0fa5b0e9c60a911c",
-      "fecha_ingesta": "2026-10-09T18:03:09.605643+00:00",
+      "movimiento_id": "e9b5ae846c699e9bea14e1c6bcf805ee06e30cca7dcf5e98321ff1b58098a35b",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-7af63655414131b0",
+      "fecha_ingesta": "2026-10-10T17:28:20.668350+00:00",
       "nombre_remitente": null,
+      "nombre_destinatario": null,
+      "entidad": null,
+      "descripcion": "Nomina de Acme SAS",
       "tipo": "ingreso",
       "categoria": "ingreso_laboral",
       "monto": 2800000.0,
       "moneda": "COP",
-      "nombre_destinatario": null,
-      "entidad": null,
       "fecha": "2026-09-30",
-      "descripcion": "Nomina de Acme SAS",
       "requiere_revision_humana": false,
-      "motivo_revision": null
+      "motivo_revision": null,
+      "linea_id": "1c797faa79a745bac1399652e3dcf31ee499c63d44cda3a7bb7f78a1a675f0b9",
+      "numero_linea": 6,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": false
     },
     {
-      "movimiento_id": "e33e57b5fc360e1cd317f8e5bb0637d8d61fbde22177c2897c0b525c7b5a5f17",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "otros",
-      "monto": 60000.0,
-      "moneda": "COP",
+      "movimiento_id": "1dc86da7407183bde0141a5090ab402f1ab6b38f8d59ce1613eea5ffb83ea4d7",
+      "cliente_id": "mi_cliente",
+      "extracto_id": "ext-7af63655414131b0",
+      "fecha_ingesta": "2026-10-10T17:28:38.826473+00:00",
+      "nombre_remitente": null,
       "nombre_destinatario": null,
       "entidad": null,
-      "fecha": "2026-09-21",
-      "descripcion": "Pago sin descripcion clara",
-      "requiere_revision_humana": true,
-      "motivo_revision": "datos_insuficientes"
-    },
-    {
-      "movimiento_id": "852aace8a69de6c43833fa297dad17bc7508cb26a5c7e772477fbc5950b69494",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "salud",
-      "monto": 95000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Farmacia Cruz Verde",
-      "entidad": "farmacia",
-      "fecha": "2026-09-20",
-      "descripcion": "Compra de medicamentos",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "ce635afc24830126f8ae749103e3df80be3862ce46258f2c7d5a4db67eab35f0",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "compras",
-      "monto": 4800000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Falabella",
-      "entidad": "tienda de tecnologia",
-      "fecha": "2026-09-18",
-      "descripcion": "Compra de equipo portatil",
-      "requiere_revision_humana": true,
-      "motivo_revision": "datos_insuficientes"
-    },
-    {
-      "movimiento_id": "8e7ff7f81fd95c0e2a4214e8e5a03c29e34e69d1ad5989c0f4716acff31fcde7",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "servicios",
-      "monto": 152000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Claro",
-      "entidad": null,
-      "fecha": "2026-09-15",
-      "descripcion": "Factura de internet y telefonia",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "0ef0816ad746ab0ef596e6c0fa5ab3359ed39ecf300cfe79eb0fce047ded5112",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "transporte",
-      "monto": 75000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Uber",
-      "entidad": null,
-      "fecha": "2026-09-11",
-      "descripcion": "Viajes en aplicacion",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "edafaeffc18343081f4d37a970cd780f5e10e446a4ebadfabcf85b8941e89340",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "alimentacion",
-      "monto": 295000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Exito",
-      "entidad": "supermercado",
-      "fecha": "2026-09-07",
-      "descripcion": "Mercado quincenal",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "adf12d4d346146f859b6eda01bc86d4f7a2ec9c2a57ed63c17869cef48b897c5",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "entretenimiento",
-      "monto": 45900.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Netflix",
-      "entidad": null,
-      "fecha": "2026-09-05",
-      "descripcion": "Suscripcion mensual",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "92f34f819a6a5395025076004ecf0fce576dd56ada767e93fa4a0720781a3789",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_09",
-      "fecha_ingesta": "2026-09-24T06:33:38.398667+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "vivienda",
-      "monto": 900000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Inmobiliaria Centro",
-      "entidad": null,
-      "fecha": "2026-09-02",
-      "descripcion": "Pago de arriendo",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "9f57fc5ace19e715a29aca921ca6d312d3d811b75611be91173f6ea9529255e4",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Acme SAS",
-      "tipo": "ingreso",
-      "categoria": "ingreso_laboral",
-      "monto": 2500000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Yha*********",
-      "entidad": null,
-      "fecha": "2026-08-30",
-      "descripcion": "Pago de nomina",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "7dea82a1f969df8fa70eebaa05699914c6aacd7c69304f243459e419151ea805",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "transferencia_persona",
-      "monto": 200000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Car*****",
-      "entidad": null,
-      "fecha": "2026-08-25",
-      "descripcion": "Transferencia a familiar",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "1a773d6985f190fd668fc3992f5e66f2759ee0e7d648c2be1b43342a19441044",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "educacion",
-      "monto": 1200000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Universidad Nacional",
-      "entidad": "universidad",
-      "fecha": "2026-08-22",
-      "descripcion": "Matricula del semestre",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "b89df43b7fd4c99978e406a75b1c536d9191f3da962cafd1caa80185e1c4dbc7",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "alimentacion",
-      "monto": 260000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "D1",
-      "entidad": "supermercado",
-      "fecha": "2026-08-19",
-      "descripcion": "Mercado quincenal",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "a412566dc5393b1257c097dfda857cb91836175e374cef54b5d80bfac998b21f",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "servicios",
-      "monto": 145000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Claro",
-      "entidad": null,
-      "fecha": "2026-08-15",
-      "descripcion": "Factura de internet y telefonia",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "33c279a080b365dbb38881e123029e952face9994f9c54809ab8a36c99bc52f0",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Acme SAS",
-      "tipo": "ingreso",
-      "categoria": "otros",
-      "monto": 350000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Yha*********",
-      "entidad": null,
-      "fecha": "2026-08-12",
-      "descripcion": "Reembolso de gastos de viaje",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "83c152a2fe3018712ef58a3412529c8bf08ac725ecb69aaaf07a06ebaf2cf803",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "transporte",
-      "monto": 92000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Uber",
-      "entidad": null,
-      "fecha": "2026-08-10",
-      "descripcion": "Viajes en aplicacion",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "75b68c2488ca35e075bcd24d2e57fe28a6991e3b50a9224cc9d3003826a428af",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "alimentacion",
-      "monto": 410000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Exito",
-      "entidad": "supermercado",
-      "fecha": "2026-08-05",
-      "descripcion": "Mercado quincenal",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "4f30d390e964d8136e1936b2d204e9128bf24d89a16a2e6a9cc41506fd8b2422",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "entretenimiento",
-      "monto": 45900.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Netflix",
-      "entidad": null,
-      "fecha": "2026-08-05",
-      "descripcion": "Suscripcion mensual",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "5f4e9c7a3c377cda7c7d540d898813cdce2e772c396acd0407ef06b99c6c6cc3",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_08",
-      "fecha_ingesta": "2026-09-24T06:33:38.397752+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "vivienda",
-      "monto": 900000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Inmobiliaria Centro",
-      "entidad": null,
-      "fecha": "2026-08-02",
-      "descripcion": "Pago de arriendo",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "7f9b41e0c0fc7f1a4ea26eb4a0a38eaab266d95330588dcd75dad0848aca743c",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Acme SAS",
-      "tipo": "ingreso",
-      "categoria": "ingreso_laboral",
-      "monto": 2500000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Yha*********",
-      "entidad": null,
-      "fecha": "2026-07-30",
-      "descripcion": "Pago de nomina",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "854d53f617141e44422d4f7d984b31f07feb6705bee6906ff6a2800b0ae66cc5",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "alimentacion",
-      "monto": 285000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Exito",
-      "entidad": "supermercado",
-      "fecha": "2026-07-20",
-      "descripcion": "Mercado quincenal",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "6f330205d97a6046a47e49293f686b061890a1acabe53a65acd4c38a9700141a",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "salud",
-      "monto": 180000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Clinica Dental Norte",
-      "entidad": "clinica",
-      "fecha": "2026-07-18",
-      "descripcion": "Consulta odontologica",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "a5ca336f2e01ddbfe4220ce673f77222726990808c7521e367e5a16665ae1fe1",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "servicios",
-      "monto": 145000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Claro",
-      "entidad": null,
-      "fecha": "2026-07-15",
-      "descripcion": "Factura de internet y telefonia",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "7ad46b70fc5e9dffce4455bcebbf31c00883bd68180c2c3041f6723a54395321",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "transporte",
-      "monto": 68000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Uber",
-      "entidad": null,
-      "fecha": "2026-07-08",
-      "descripcion": "Viajes en aplicacion",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "c6ee1967e5b22d34d3196da7adc58907c807b41e5471f699679075a1dde06cb1",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "alimentacion",
-      "monto": 320000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Exito",
-      "entidad": "supermercado",
-      "fecha": "2026-07-06",
-      "descripcion": "Mercado quincenal",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "10bc24008e29226f62b626412d19bcc9dea5f398184b4de9d9ecadfa04958c68",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "entretenimiento",
-      "monto": 45900.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Netflix",
-      "entidad": null,
-      "fecha": "2026-07-05",
-      "descripcion": "Suscripcion mensual",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "eb2fa19296a214499e8c593e360604e5449674664d82dd0369b8fc44175d62df",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "extracto_2026_07",
-      "fecha_ingesta": "2026-09-24T06:33:38.396384+00:00",
-      "nombre_remitente": "Yha*********",
-      "tipo": "egreso",
-      "categoria": "vivienda",
-      "monto": 900000.0,
-      "moneda": "COP",
-      "nombre_destinatario": "Inmobiliaria Centro",
-      "entidad": null,
-      "fecha": "2026-07-02",
-      "descripcion": "Pago de arriendo",
-      "requiere_revision_humana": false,
-      "motivo_revision": null
-    },
-    {
-      "movimiento_id": "ba248e48edb8251b6809ef283ebc9cfb2808effbd6e0106e5bedeb31480f55ec",
-      "cliente_id": "cliente_demo",
-      "extracto_id": "arch-0fa5b0e9c60a911c",
-      "fecha_ingesta": "2026-10-09T18:03:09.605643+00:00",
-      "nombre_remitente": null,
+      "descripcion": "Me llego una notificacion del banco pero no dice cuanto fue ni de que",
       "tipo": null,
       "categoria": null,
       "monto": null,
       "moneda": null,
-      "nombre_destinatario": null,
-      "entidad": null,
       "fecha": null,
-      "descripcion": "Me llego una notificacion del banco pero no dice cuanto fue ni de que",
       "requiere_revision_humana": true,
-      "motivo_revision": "datos_insuficientes"
+      "motivo_revision": "datos_insuficientes",
+      "linea_id": "e4ecba57574f9472dbbcb30adb9e04d7d7a390660afdfd99a1358e65841a70c1",
+      "numero_linea": 10,
+      "decision": null,
+      "revisado_en": null,
+      "pendiente": true
     }
   ],
-  "resumen_texto": "En el periodo julio 2026, los ingresos fueron 2.500.000 COP, los egresos 1.943.900 COP, generando un balance positivo de 556.100 COP. En agosto 2026 los ingresos aumentaron a 2.850.000 COP pero los egresos subieron a 3.252.900 COP, resultando en un balance negativo de -402.900 COP, lo que indica un deterioro respecto al mes anterior. En septiembre 2026 los ingresos alcanzaron 5.300.000 COP y los egresos 6.422.900 COP, con un balance de -1.122.900 COP, profundizando la pérdida. En octubre 2026 no se registraron ingresos y los egresos fueron 6.706.600 COP, dejando un balance de -6.706.600 COP, la peor posición del periodo analizado.  \n\nLos egresos se concentran principalmente en la categoría compras, con un total de 9.120.000 COP, representando el 49.8 % del gasto. Le sigue vivienda con 4.600.000 COP (25.1 %), alimentación con 1.604.500 COP (8.8 %), educación con 1.200.000 COP (6.5 %) y servicios con 500.900 COP (2.7 %). En ingresos, la mayor parte proviene del ingreso laboral, 10.300.000 COP (96.7 %), y un pequeño aporte de otros 350.000 COP (3.3 %).  \n\nLlaman la atención dos movimientos de egreso en la categoría compras que superan ampliamente la media del grupo (4.800.000 COP el 18 sep 2026 y 4.200.000 COP el 20 oct 2026), catalogados como anomalías por su alta desviación. Además, el sistema marcó seis movimientos para revisión, entre ellos uno sin fecha ni datos y varios con posibles duplicados o información insuficiente. No se detectaron movimientos sin fecha fuera del análisis."
+  "lecturas": {
+    "2026-09": {
+      "texto": "En el periodo de septiembre de 2026 el cliente registró ingresos por 2.800.000 COP, sin egresos, lo que genera un balance positivo de 2.800.000 COP. Al tratarse del único mes analizado, no se observa variación del balance respecto a periodos anteriores; el resultado se mantiene estable y positivo.\n\nTodo el dinero recibido corresponde a la categoría de ingreso laboral, con un total de 2.800.000 COP y representando el 100 % de los ingresos. No se identificaron egresos ni categorías de gasto, por lo que el destino del dinero se concentra íntegramente en la fuente de ingresos mencionada.\n\nNo se detectaron anomalías en los movimientos y la lista de transacciones pendientes de revisión está vacía. Además, no hubo movimientos sin fecha ni sin monto, y no existen importes pendientes. En resumen, el registro muestra una situación financiera sin irregularidades ni elementos que requieran atención adicional.",
+      "vigente": true
+    },
+    "2026-10": {
+      "texto": "En el periodo de octubre 2026 no se registraron ingresos y los egresos totalizaron 6.706.600 COP, lo que generó un balance negativo de 6.706.600 COP. Al tratarse del único mes analizado, no es posible comparar la evolución del balance con periodos anteriores.\n\nEl gasto se concentró principalmente en la categoría de compras, con un total de 4.320.000 COP, representando el 64.4 % del egreso total. Le sigue la vivienda, con 1.900.000 COP (28.3 %). Otras categorías fueron transferencia a persona (250.000 COP, 3.7 %), entretenimiento (62.800 COP, 0.9 %), salud (62.000 COP, 0.9 %), servicios (58.900 COP, 0.9 %), alimentación (34.500 COP, 0.5 %) y transporte (18.400 COP, 0.3 %).\n\nLlaman la atención un movimiento identificado como anomalía: una compra de computador portátil en Falabella el 20 de octubre por 4.200.000 COP, cuyo monto supera en 6.9 veces la media del grupo y presenta una desviación de 2.89. Además, dos transacciones quedaron marcadas para revisión: una compra en Rappi de 34.500 COP (posible intento de manipulación) y un pago de arriendo de 950.000 COP que aparece duplicado. No existen movimientos sin fecha ni sin monto.",
+      "vigente": true
+    },
+    "todo": {
+      "texto": "En el periodo analizado, el cliente registró ingresos totales de 2.800.000 COP y egresos de 6.706.600 COP, resultando en un balance negativo de 3.906.600 COP. En septiembre de 2026 se obtuvo un ingreso único de 2.800.000 COP sin egresos, generando un balance positivo de 2.800.000 COP. En octubre de 2026 no hubo ingresos y los egresos ascendieron a 6.706.600 COP, produciendo un balance de -6.706.600 COP, lo que indica que el balance empeoró significativamente entre los dos meses.  \n\nLos principales destinos del gasto fueron: compras con un total de 4.320.000 COP, representando el 64.4 % del total de egresos; vivienda con 1.900.000 COP (28.3 %); transferencia a persona con 250.000 COP (3.7 %); entretenimiento con 62.800 COP (0.9 %); salud con 62.000 COP (0.9 %); servicios con 58.900 COP (0.9 %); alimentación con 34.500 COP (0.5 %); y transporte con 18.400 COP (0.3 %).  \n\nSe detectó una anomalía en una compra de computador portátil en Falabella el 20 de octubre de 2026, por 4.200.000 COP, cuyo monto es 6.9 veces la media del grupo y se desvía 2.89 veces del patrón habitual. Además, el sistema marcó tres movimientos para revisión: una compra en Rappi de 34.500 COP (posible intento de manipulación), un pago de arriendo de 950.000 COP con posible duplicado, y una notificación bancaria sin datos suficientes. Existe también un movimiento sin monto registrado y un monto pendiente de 1.934.500 COP.",
+      "vigente": true
+    }
+  }
 }

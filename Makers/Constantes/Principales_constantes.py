@@ -111,3 +111,56 @@ def COLUMNAS_RESULTADOS():
     "ejemplos_rag",
     "error",
 ]
+
+
+# ───────────────────── Asistente de preguntas ─────────────────────
+
+def MODELO_ASISTENTE():
+    # El 20b basta para reescribir preguntas y redactar respuestas cortas a
+    # partir de cifras ya calculadas, y responde bastante más rápido que el 120b.
+    return "openai/gpt-oss-20b"
+
+
+def MODELO_GUARDIA():
+    # Clasificador dedicado a detectar inyección de prompt. Devuelve una
+    # probabilidad, no texto libre.
+    return "meta-llama/llama-prompt-guard-2-86m"
+
+
+def UMBRAL_GUARDIA():
+    # Probado: preguntas legítimas ~0.0004, ataques directos 0.90-0.9996.
+    return 0.5
+
+
+def MAX_LARGO_PREGUNTA():
+    # Una pregunta financiera real es corta; los textos largos son el vehículo
+    # habitual de las inyecciones.
+    return 300
+
+
+def MAX_TURNOS_HISTORIAL():
+    return 3
+
+
+def MAX_PREGUNTAS_POR_MINUTO():
+    # Protege la cuota de Groq de un bucle o de un abuso desde el navegador.
+    return 20
+
+
+def PREGUNTAS_SUGERIDAS():
+    """
+    Preguntas genéricas, válidas para cualquier titular con movimientos.
+    Su intención ya se conoce, así que se responden sin pasar por el enrutador.
+    """
+    return [
+        "¿En qué categoría gasto más dinero?",
+        "¿Cómo ha cambiado mi balance de un mes a otro?",
+        "¿Hay algún movimiento fuera de lo normal que deba revisar?",
+    ]
+
+
+def TAMANO_LOTE():
+    # Filas de un extracto (PDF o CSV) que se mandan juntas al extractor. Con
+    # ~20 s por llamada, 100 filas pasan de ~33 min a unos 5. Más grande
+    # alarga cada respuesta y sube el riesgo de que el modelo omita filas.
+    return 8

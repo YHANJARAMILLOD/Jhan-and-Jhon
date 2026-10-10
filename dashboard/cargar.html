@@ -66,7 +66,7 @@
         <p class="zona__titulo">Arrastra aquí tus extractos</p>
         <p class="zona__ayuda">Puedes soltar varios a la vez, de meses distintos. Cada archivo se procesará como un extracto independiente.</p>
         <button class="boton" type="button" id="elegir">Elegir archivos</button>
-        <p class="zona__formatos">Formatos previstos: TXT, CSV y PDF · hasta 10 MB por archivo</p>
+        <p class="zona__formatos">Extractos en PDF (digitales, no escaneados), o texto .txt / .csv con una transacción por línea · hasta 15 MB en total</p>
         <input type="file" id="entrada" multiple accept=".txt,.csv,.pdf" class="sr" tabindex="-1">
       </div>
 
@@ -119,6 +119,9 @@ const entrada = document.getElementById('entrada');
 const listaNodo = document.getElementById('adjuntos');
 const avanceNodo = document.getElementById('avance');
 let archivos = [];
+// Las contraseñas viven solo en esta pestaña y se envían una vez al servidor
+// local, que las usa para abrir el PDF en memoria. No se guardan en ningún lado.
+let claves = [];
 let hayServidor = false;
 let procesando = false;
 
@@ -128,8 +131,9 @@ function pintarAdjuntos() {
     return;
   }
 
+  const esPdf = (a) => a.name.toLowerCase().endsWith('.pdf') || a.type === 'application/pdf';
   const filas = archivos.map((a, i) => `
-    <div class="adjuntos__fila">
+    <div class="adjuntos__fila${esPdf(a) ? ' adjuntos__fila--pdf' : ''}">
       <svg class="adjuntos__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
         <path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V7.5z"/>
         <path d="M14 3v4.5h4.5"/>
@@ -137,6 +141,12 @@ function pintarAdjuntos() {
       <span class="adjuntos__nombre">${escapar(a.name)}</span>
       <span class="adjuntos__peso">${escapar(pesoLegible(a.size))}</span>
       <button class="adjuntos__quitar" type="button" data-i="${i}">Quitar</button>
+      ${esPdf(a) ? `
+        <label class="adjuntos__clave">
+          <span class="sr">Contraseña de ${escapar(a.name)}</span>
+          <input class="campo__entrada" type="password" data-clave="${i}" value="${escapar(claves[i] ?? '')}"
+                 placeholder="Contraseña, si el PDF tiene" autocomplete="off" spellcheck="false">
+        </label>` : ''}
     </div>`).join('');
 
   listaNodo.innerHTML = `
@@ -166,7 +176,12 @@ listaNodo.addEventListener('click', (e) => {
   const boton = e.target.closest('.adjuntos__quitar');
   if (!boton) return;
   archivos.splice(Number(boton.dataset.i), 1);
+  claves.splice(Number(boton.dataset.i), 1);
   pintarAdjuntos();
+});
+
+listaNodo.addEventListener('input', (e) => {
+  if (e.target.dataset.clave !== undefined) claves[Number(e.target.dataset.clave)] = e.target.value;
 });
 
 ['dragenter', 'dragover'].forEach(evento => {
@@ -195,7 +210,7 @@ function pintarCargados() {
   return fetch('./datos.json', { cache: 'no-store' })
     .then(r => { if (!r.ok) throw new Error(`El servidor respondió ${r.status}`); return r.json(); })
     .then((datos) => {
-      const periodos = (datos.periodos ?? []).filter(p => p.moneda === datos.moneda_principal);
+      const periodos = (datos.vistas?.todo?.periodos ?? []).filter(p => p.moneda === datos.moneda_principal);
       const nodo = document.getElementById('cargados');
 
       if (!periodos.length) {
@@ -335,7 +350,10 @@ async function analizar() {
 
   const datos = new FormData();
   datos.append('cliente', cliente);
-  for (const archivo of archivos) datos.append('archivos', archivo);
+  archivos.forEach((archivo, i) => {
+    datos.append('archivos', archivo);
+    datos.append('contrasenas', claves[i] ?? '');
+  });
 
   try {
     const respuesta = await fetch('/api/procesar', { method: 'POST', body: datos });
