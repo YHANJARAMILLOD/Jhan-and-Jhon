@@ -11,6 +11,7 @@ from Validaciones.validaciones import (
 from Anonimizacion.anonimizacion import anonimizar_movimiento
 from Recuperacion.recuperacion import recuperar_ejemplos, formatear_ejemplos
 from Seguridad.inyeccion import detectar_inyeccion, sanear
+from Entrada.entrada import ES_GMF, fecha_iso
 
 
 def obtener_ejemplos_rag(anonimizado):
@@ -75,6 +76,58 @@ def procesar_movimiento(texto, usar_rag=True):
     }
 
 
+# ───────────────────────── Filas sin modelo ─────────────────────────
+
+
+_MONTO_GMF = re.compile(r"(?P<signo>[+-])\s?\$\s?(?P<cifra>\d[\d.,]*\d|\d)\s*$")
+
+
+def _cifra_inequivoca(cifra):
+    """"26,12" o "1.026,12" (coma decimal) y "26.12" o "1,026.12" (punto decimal)."""
+    if re.fullmatch(r"\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?", cifra):
+        return float(cifra.replace(".", "").replace(",", "."))
+    if re.fullmatch(r"\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?", cifra):
+        return float(cifra.replace(",", ""))
+    return None
+
+
+def movimiento_gmf(texto):
+    """
+    El movimiento de una fila del 4x1000, armado sin modelo, o None si la fila
+    no lo es o algo no se lee con certeza (entonces va al pipeline normal).
+
+    Son la mitad de las filas de un extracto de NuBank y siempre tienen la
+    misma forma: "05 jun 2025 Impuesto del 4x1000 -$26,12". Pasarlas por qwen
+    costaba ~20 s cada una para un resultado que se conoce de antemano. Es un
+    impuesto colombiano, así que la moneda es COP; con signo + es una
+    devolución.
+    """
+    if not ES_GMF.search(texto) or detectar_inyeccion(sanear(texto)):
+        return None
+    fecha, monto = fecha_iso(texto), _MONTO_GMF.search(texto)
+    if not fecha or not monto:
+        return None
+    valor = _cifra_inequivoca(monto.group("cifra"))
+    if not valor:
+        return None
+    devolucion = monto.group("signo") == "+"
+    salida = [{"es_movimiento_financiero": True, "movimiento": {
+        "nombre_remitente": None,
+        "tipo": "ingreso" if devolucion else "egreso",
+        "categoria": "otros",
+        "monto": valor,
+        "moneda": "COP",
+        "nombre_destinatario": None,
+        "entidad": "banco",
+        "fecha": fecha,
+        "descripcion": "Devolución del impuesto 4x1000" if devolucion else "Impuesto 4x1000",
+        "requiere_revision_humana": False,
+        "motivo_revision": None,
+    }}]
+    validate_financial_movement(salida, texto)
+    return {"categorias_extraidas": ["otros"], "anonimizado": salida, "ejemplos_rag": [[]], "revisado": salida}
+
+
 # ───────────────────────── Lotes ─────────────────────────
 
 
@@ -116,7 +169,8 @@ def procesar_en_lotes(filas, usar_rag=True, tamano=TAMANO_LOTE):
     más lento, pero nunca se asigna un movimiento a la fila equivocada.
 
     Las filas con texto de inyección van siempre solas: dentro de un lote, la
-    marca de manipulación caería sobre todos los movimientos del lote.
+    marca de manipulación caería sobre todos los movimientos del lote. Las del
+    4x1000 no pasan por ningún modelo (movimiento_gmf).
     """
     def una_por_una(grupo):
         for numero, texto in grupo:
@@ -158,6 +212,10 @@ def procesar_en_lotes(filas, usar_rag=True, tamano=TAMANO_LOTE):
             }, None
 
     for numero, texto in filas:
+        fijo = movimiento_gmf(texto)
+        if fijo:
+            yield numero, texto, fijo, None
+            continue
         if detectar_inyeccion(sanear(texto)):
             yield from vaciar()
             yield from una_por_una([(numero, texto)])

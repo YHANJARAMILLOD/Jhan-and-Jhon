@@ -322,12 +322,22 @@ Cada línea del archivo se guarda con guardar_linea, igual que el servidor.
         tienen fecha y monto (es_fila_de_movimiento): encabezados, totales
         y pies de página no llegan al modelo. Mensajes claros para
         contraseña faltante o incorrecta, PDF escaneado y PDF dañado.
+        Descarta el texto girado (_horizontal): NuBank lleva su razón social
+        en vertical en el margen y sus letras se colaban en las filas.
+
+    _filas_del_pdf(texto)
+        Las filas, más las del 4x1000: esa línea no trae fecha y va justo
+        debajo de su movimiento, así que se le antepone la fecha de esa
+        fila. Si no va justo debajo de una fila (como el total del 4x1000
+        del resumen), no entra: así no se suma dos veces.
 
     completar_anio(filas, texto)
         Los extractos ponen el año una vez ("Periodo: noviembre 2026") y
         las filas dicen "02 NOV". Sin año, el modelo lo inventaba (salió
         2023) y el movimiento caía en otro mes. Toma el año del encabezado
-        y lo agrega a cada fecha que no lo tenga. Si el periodo cruza el
+        y lo agrega a cada fecha que no lo tenga. Solo cuenta un año junto
+        a un mes ("JUN 2025") o dentro de una fecha: un "2000" suelto era el
+        final de un teléfono. Si el periodo cruza el
         fin de año, julio-diciembre van con el primer año y enero-junio con
         el segundo. Si no hay un año claro, no toca nada.
 
@@ -349,6 +359,14 @@ Cada línea del archivo se guarda con guardar_linea, igual que el servidor.
         el monto de cada uno aparece en su fila (_corresponde); si no, se
         reprocesa fila por fila. Nunca se asigna un movimiento a la fila
         equivocada.
+
+    movimiento_gmf(texto)
+        Las filas del 4x1000 ("05 jun 2025 Impuesto del 4x1000 -$26,12")
+        se convierten en movimiento sin ningún modelo: egreso o, con +,
+        devolución; categoría "otros"; COP (es un impuesto colombiano).
+        Son la mitad de las filas de un extracto de NuBank y por qwen
+        costaban ~20 s cada una. Si la fecha o el monto no se leen con
+        certeza, o hay texto de inyección, la fila va al pipeline normal.
 
     obtener_ejemplos_rag(anonimizado)
         Si el RAG falla, avisa y sigue sin ejemplos.
@@ -675,10 +693,12 @@ extracción local funciona pero no la revisión ni las lecturas.
 7. QUÉ FALTA POR HACER (problemas conocidos)
 -------------------------------------------------------------------------------
 
-[ ] Calibrar la lectura de PDF con extractos reales.
-    Se probó con PDFs generados. Falta probar con extractos de NuBank (con
-    y sin contraseña) y de otros bancos: columnas de saldo, filas partidas
-    en dos líneas, montos negativos con signo al final.
+[ ] Calibrar la lectura de PDF con más extractos reales.
+    La maqueta de NuBank se calibró con un extracto de junio de 2025, pero
+    ese archivo había sido reexportado desde Word y parte de sus fechas y
+    montos eran imágenes (sin OCR no se leen). Falta probar con un PDF
+    descargado directamente de la app, con y sin contraseña, y con otros
+    bancos: columnas de saldo, filas partidas en dos líneas.
 
 [ ] La extracción local es lenta.
     ~20 s por movimiento en un M4 de 16 GB. Opciones: un modelo más

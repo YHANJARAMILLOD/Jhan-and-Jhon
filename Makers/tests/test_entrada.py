@@ -138,3 +138,58 @@ def test_periodo_que_cruza_el_fin_de_anio():
 ])
 def test_no_toca_las_filas_sin_un_anio_claro(texto, fila):
     assert completar_anio([(2, fila)], texto) == [(2, fila)]
+
+
+def test_pdf_ignora_el_texto_girado_del_margen():
+    filas = [f"0{d} JUN COMPRA AMAZON 6.529,80" for d in range(1, 6)]
+    pdf = crear_pdf(["Periodo 01 - 30 JUN 2025", *filas], margen_vertical="Nu Compania de Financiamiento S.A.")
+    leidas, _ = leer_extracto("nu.pdf", pdf)
+    assert [texto for _, texto in leidas] == [f.replace("JUN", "JUN 2025") for f in filas]
+
+
+def test_filtro_descarta_caracteres_girados_aunque_se_marquen_verticales():
+    # Tal como llegan del extracto de NuBank: pdfplumber dice upright=True,
+    # pero la matriz los gira 90°. Antes se colaban en las filas ("a 05 jun").
+    girado = {"object_type": "char", "text": "a", "upright": True, "matrix": (-0.0, 1.03, -1.0, -0.0, 26.28, 429.17)}
+    normal = {"object_type": "char", "text": "0", "upright": True, "matrix": (1.0, 0.0, 0.0, 1.0, 68.06, 473.59)}
+    assert not entrada._horizontal(girado)
+    assert entrada._horizontal(normal)
+    assert entrada._horizontal({"object_type": "rect"})
+
+
+def test_un_numero_de_telefono_no_es_un_anio():
+    texto = "Periodo 01 - 30 JUN 2025\n01 jun Compra -$6.529,80\nLinea gratuita 01 800 917 2000"
+    assert completar_anio([(2, "01 jun Compra -$6.529,80")], texto) == [(2, "01 jun 2025 Compra -$6.529,80")]
+
+
+def test_anio_dentro_de_una_fecha_numerica():
+    texto = "Desde 01/06/2025 hasta 30/06/2025\n05 jun Compra 1.000,00"
+    assert completar_anio([(2, "05 jun Compra 1.000,00")], texto) == [(2, "05 jun 2025 Compra 1.000,00")]
+
+
+from Entrada.entrada import fecha_iso
+
+
+def test_pdf_pone_la_fecha_del_movimiento_a_su_linea_del_4x1000():
+    pdf = crear_pdf([
+        "Periodo 01 - 30 JUN 2025",
+        "Impuesto del 4x1000 -$118,84",            # total del resumen: no va debajo de ninguna fila
+        "01 jun Compra en AMAZON -$6.529,80",
+        "Impuesto del 4x1000 -$26,12",
+        "Pagina 1 de 2",
+        "Impuesto del 4x1000 -$9,00",              # no va justo debajo de una fila: no se adivina
+    ])
+    filas, _ = leer_extracto("nu.pdf", pdf)
+    assert [t for _, t in filas] == ["01 jun 2025 Compra en AMAZON -$6.529,80", "01 jun 2025 Impuesto del 4x1000 -$26,12"]
+
+
+@pytest.mark.parametrize("fila,esperada", [
+    ("05 jun 2025 Compra", "2025-06-05"),
+    ("05/06/2025 Compra", "2025-06-05"),
+    ("2025-06-05 Compra", "2025-06-05"),
+    ("31 feb 2025 Compra", None),
+    ("05 jun Compra", None),
+    ("Compra 05 jun 2025", None),
+])
+def test_fecha_iso(fila, esperada):
+    assert fecha_iso(fila) == esperada

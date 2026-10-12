@@ -1,11 +1,22 @@
 """Construye PDFs mínimos para pruebas, sin depender de ninguna librería."""
 
 
-def crear_pdf(lineas):
-    """PDF de una página con las líneas dadas, en Helvetica. Sin cifrar."""
+def _escapar(texto):
+    return texto.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def crear_pdf(lineas, margen_vertical=None):
+    """
+    PDF de una página con las líneas dadas, en Helvetica. Sin cifrar.
+
+    margen_vertical: texto girado 90° en el margen izquierdo, a la altura de
+    las líneas, como la razón social de los extractos de NuBank.
+    """
     contenido = "BT /F1 10 Tf 40 780 Td 14 TL " + " ".join(
-        "({}) '".format(l.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")) for l in lineas
+        "({}) '".format(_escapar(l)) for l in lineas
     ) + " ET"
+    if margen_vertical:
+        contenido += f" q 0 1 -1 0 25 690 cm BT /F1 6 Tf 0 0 Td ({_escapar(margen_vertical)}) Tj ET Q"
     flujo = contenido.encode("latin-1")
     objetos = [
         b"<< /Type /Catalog /Pages 2 0 R >>",

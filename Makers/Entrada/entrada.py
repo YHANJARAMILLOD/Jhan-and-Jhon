@@ -8,6 +8,7 @@ estable de cada movimiento, así que leer el mismo archivo da los mismos ids.
 import codecs
 import io
 import re
+from datetime import date
 
 
 class ArchivoIlegible(ValueError):
@@ -111,7 +112,52 @@ _FECHA_SIN_ANIO = re.compile(
     rf"(?!\s*\d{{2,4}}(?![\d.,]))",
     re.IGNORECASE,
 )
-_ANIO = re.compile(r"(?<![\d.,])(20\d{2})(?!\d|[.,]\d)")
+# Solo cuenta un año que acompaña a un mes ("JUN 2025", "noviembre de 2026") o
+# que forma parte de una fecha (30/06/2025). Un "2000" suelto era el final del
+# teléfono de atención de NuBank y anulaba el año real.
+_ANIO = re.compile(
+    rf"\b{_MESES_CORTOS}\s+(?:de\s+|del\s+)?(20\d{{2}})\b|\b\d{{1,2}}[/-]\d{{1,2}}[/-](20\d{{2}})\b",
+    re.IGNORECASE,
+)
+
+
+# El gravamen a los movimientos financieros (4x1000) que los extractos
+# colombianos cobran, y a veces devuelven, en una línea aparte debajo de cada
+# movimiento, sin fecha propia.
+ES_GMF = re.compile(r"4\s?x\s?1\.?000|\bGMF\b|gravamen (?:a los |de )?movimientos financieros", re.IGNORECASE)
+_DINERO_CON_SIGNO = re.compile(r"[+-]\s?\$\s?\d")
+_FECHA_AL_INICIO = re.compile(
+    rf"^(?:\d{{1,2}}\s+{_MESES_CORTOS}(?:\s+20\d{{2}}\b)?|\d{{1,2}}[/-]\d{{1,2}}[/-]\d{{2,4}}\b|\d{{4}}-\d{{2}}-\d{{2}}\b)",
+    re.IGNORECASE,
+)
+_FECHA_COMPLETA = re.compile(
+    rf"^(?:(?P<d1>\d{{1,2}})\s+(?P<mes>{_MESES_CORTOS})\s+(?P<a1>20\d{{2}})"
+    rf"|(?P<d2>\d{{1,2}})/(?P<m2>\d{{1,2}})/(?P<a2>20\d{{2}})"
+    rf"|(?P<a3>20\d{{2}})-(?P<m3>\d{{2}})-(?P<d3>\d{{2}}))\b",
+    re.IGNORECASE,
+)
+
+
+def fecha_iso(fila):
+    """
+    La fecha con que empieza una fila, como YYYY-MM-DD, o None si no empieza
+    con una fecha completa e inequívoca ("05 jun 2025", "05/06/2025",
+    "2025-06-05"). Las fechas con año de dos dígitos o en orden mes/día no se
+    adivinan.
+    """
+    m = _FECHA_COMPLETA.match(fila.strip())
+    if not m:
+        return None
+    if m.group("d1"):
+        anio, mes, dia = int(m.group("a1")), _NUMERO_MES[m.group("mes")[:3].lower()], int(m.group("d1"))
+    elif m.group("d2"):
+        anio, mes, dia = int(m.group("a2")), int(m.group("m2")), int(m.group("d2"))
+    else:
+        anio, mes, dia = int(m.group("a3")), int(m.group("m3")), int(m.group("d3"))
+    try:
+        return date(anio, mes, dia).isoformat()
+    except ValueError:
+        return None
 
 
 def completar_anio(filas, texto):
@@ -120,15 +166,16 @@ def completar_anio(filas, texto):
 
     Los extractos ponen el año una sola vez, en el encabezado ("Periodo:
     noviembre 2026"). Sin él, el modelo lo inventaba y el movimiento caía en
-    otro mes. El año se toma de las líneas que no son filas; si el periodo
+    otro mes. El año se toma de las líneas que no son filas, y solo si va
+    junto a un mes o dentro de una fecha; si el periodo
     cruza el fin de año (dic 2025 - ene 2026), los meses de julio en adelante
     van con el primer año y el resto con el segundo. Si no hay un año claro,
     las filas quedan como están.
     """
     filas_texto = {texto_fila for _, texto_fila in filas}
     anios = sorted({
-        int(a) for linea in texto.splitlines() if linea.strip() not in filas_texto
-        for a in _ANIO.findall(linea)
+        int(a or b) for linea in texto.splitlines() if linea.strip() not in filas_texto
+        for a, b in _ANIO.findall(linea)
     })
     if len(anios) == 1:
         def anio_de(mes):
@@ -146,6 +193,42 @@ def completar_anio(filas, texto):
     return [(numero, _FECHA_SIN_ANIO.sub(con_anio, texto_fila, count=1)) for numero, texto_fila in filas]
 
 
+def _horizontal(objeto):
+    """
+    Descarta el texto girado. Los extractos de NuBank llevan la razón social en
+    vertical en el margen, y sus letras sueltas se colaban entre las filas
+    ("a 05 jun ...") o las partían. pdfplumber marca esos caracteres como
+    verticales; la matriz de transformación es la que dice que están girados.
+    """
+    if objeto.get("object_type") != "char":
+        return True
+    _, b, c, *_ = objeto["matrix"]
+    return abs(b) < 0.01 and abs(c) < 0.01
+
+
+def _filas_del_pdf(texto):
+    """
+    Las filas con fecha y monto, más las del 4x1000.
+
+    La línea del 4x1000 no trae fecha: es la del movimiento que va justo
+    encima, así que se le antepone. Solo si va justo debajo de una fila con
+    fecha: el total del 4x1000 del resumen (primera página) no va debajo de
+    ninguna, y así no se suma dos veces.
+    """
+    filas, fecha_anterior = [], None
+    for numero, linea in enumerate(texto.splitlines(), start=1):
+        linea = linea.strip()
+        if es_fila_de_movimiento(linea):
+            filas.append((numero, linea))
+            inicio = _FECHA_AL_INICIO.match(linea)
+            fecha_anterior = inicio.group(0) if inicio else None
+            continue
+        if fecha_anterior and ES_GMF.search(linea) and _DINERO_CON_SIGNO.search(linea):
+            filas.append((numero, f"{fecha_anterior} {linea}"))
+        fecha_anterior = None
+    return filas
+
+
 def leer_pdf(nombre, contenido, contrasena=None):
     """
     Filas de movimiento de un PDF, como pares (número de línea, texto).
@@ -158,7 +241,7 @@ def leer_pdf(nombre, contenido, contrasena=None):
 
     try:
         with pdfplumber.open(io.BytesIO(contenido), password=contrasena or "") as pdf:
-            texto = "\n".join((pagina.extract_text() or "") for pagina in pdf.pages)
+            texto = "\n".join((pagina.filter(_horizontal).extract_text() or "") for pagina in pdf.pages)
     except PDFPasswordIncorrect:
         if contrasena:
             raise ArchivoIlegible(f"La contraseña de '{nombre}' no es correcta.") from None
@@ -175,11 +258,7 @@ def leer_pdf(nombre, contenido, contrasena=None):
             f"Descarga el extracto digital desde la aplicación o la web de tu banco."
         )
 
-    filas = [
-        (numero, linea.strip())
-        for numero, linea in enumerate(texto.splitlines(), start=1)
-        if es_fila_de_movimiento(linea)
-    ]
+    filas = _filas_del_pdf(texto)
     if not filas:
         raise ArchivoIlegible(
             f"En '{nombre}' no se encontró ninguna fila con fecha y monto. "
