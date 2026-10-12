@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estado de cuenta · Jhan y Jhon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./estilo.css">
+</head>
+<body>
+<!--
+  THESIS: El estado de cuenta como la factura mensual que el titular ya sabe leer.
+  Rechaza la rejilla de tarjetas de KPI flotantes y la dona de categorías.
+  OWN-WORLD: Papel cálido sobre escritorio, tinta oficial, sello azul de membrete,
+  cajas reguladas con guías punteadas, Archivo y Archivo Narrow, cifras tabulares,
+  caja del total con borde grueso.
+  STORY: El titular ve la aritmética del periodo resolverse en un balance, luego a
+  dónde se fue el dinero, y por último qué no pudo clasificar el sistema.
+  FIRST VIEWPORT: Membrete con titular y periodo sobre regla gruesa; la liquidación
+  plantea ingresos menos egresos como resta visible y desemboca en la caja del
+  balance a escala monumental.
+  FORM: La Factura, candidato 1 de mi lista ordenada, fijado por el usuario sobre el
+  candidato 3 del roll; seed 9141aa27.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish
+  review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+
+<div class="hoja">
+  <nav class="nav">
+    <a class="nav__marca" href="./index.html">
+      <svg class="nav__sello" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="4" y="2.5" width="16" height="19" rx="1"/>
+        <path d="M8 8h8M8 12h8M8 16h5"/>
+      </svg>
+      Jhan y Jhon
+    </a>
+    <div class="nav__vinculos">
+      <a href="./index.html" aria-current="page">Estado de cuenta</a>
+      <a href="./cargar.html">Cargar extractos</a>
+    </div>
+  </nav>
+
+  <div id="raiz">
+    <p class="cargando">Cargando estado de cuenta…</p>
+  </div>
+</div>
+
+<script>
+const FORMATO = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+const nombrarPeriodo = (clave) => {
+  if (clave === 'sin_fecha') return 'sin fecha';
+  const [anio, mes] = clave.split('-');
+  return mes ? `${MESES[Number(mes) - 1]} ${anio}` : anio;
+};
+
+const rangoPeriodos = (periodos) => {
+  const fechados = periodos.filter(p => p.periodo !== 'sin_fecha').map(p => p.periodo).sort();
+  if (!fechados.length) return 'Sin periodo fechado';
+  const inicio = nombrarPeriodo(fechados[0]);
+  const fin = nombrarPeriodo(fechados[fechados.length - 1]);
+  return inicio === fin ? inicio : `${inicio} — ${fin}`;
+};
+
+const escapar = (valor) => String(valor ?? '').replace(/[&<>"']/g, (c) => (
+  { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+));
+
+// Las categorías llegan en el formato del pipeline; aquí se leen en español.
+const CATEGORIAS = {
+  alimentacion: 'Alimentación',
+  transporte: 'Transporte',
+  entretenimiento: 'Entretenimiento',
+  vivienda: 'Vivienda',
+  salud: 'Salud',
+  educacion: 'Educación',
+  compras: 'Compras',
+  servicios: 'Servicios',
+  transferencia_persona: 'Transferencia a persona',
+  ingreso_laboral: 'Ingreso laboral',
+  otros: 'Otros'
+};
+
+const nombrarCategoria = (clave) => CATEGORIAS[clave] ?? String(clave ?? '—').replace(/_/g, ' ');
+
+const PORCENTAJE = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/*
+  Los motivos llegan con la clave técnica del pipeline. "datos_insuficientes"
+  no le dice nada al titular, así que cada uno se traduce a una etiqueta corta
+  y a una explicación de qué pasó en realidad.
+*/
+const MOTIVOS = {
+  datos_insuficientes: {
+    etiqueta: 'Faltan datos',
+    razon: 'El texto del extracto no traía suficiente información para clasificarlo con certeza.'
+  },
+  moneda_no_especificada: {
+    etiqueta: 'Moneda sin especificar',
+    razon: 'El movimiento no decía en qué moneda estaba, así que no se asumió ninguna.'
+  },
+  formato_numerico_ambiguo: {
+    etiqueta: 'Monto ambiguo',
+    razon: 'El número podía leerse de más de una forma (por ejemplo, si el punto separaba miles o decimales).'
+  },
+  posible_duplicado: {
+    etiqueta: 'Posible repetido',
+    razon: 'Aparece otro movimiento casi idéntico en el mismo extracto. No se eliminó ninguno: puede que ambos sean reales.'
+  },
+  posible_intento_de_manipulacion: {
+    etiqueta: 'Texto sospechoso',
+    razon: 'El texto contenía instrucciones dirigidas al sistema. Se ignoraron y solo se analizó el movimiento.'
+  }
+};
+
+const leerMotivos = (cadena) => String(cadena ?? '')
+  .split(',')
+  .map(m => m.trim())
+  .filter(Boolean)
+  .map(clave => MOTIVOS[clave] ?? { etiqueta: clave.replace(/_/g, ' '), razon: '' });
+
+const fechaCorta = (iso) => {
+  if (!iso) return 'Sin fecha';
+  const [anio, mes, dia] = iso.split('-');
+  return `${Number(dia)} ${MESES[Number(mes) - 1]?.slice(0, 3) ?? ''} ${anio}`;
+};
+
+// La contraparte cambia de campo según el tipo: en un egreso es el
+// destinatario, en un ingreso el remitente. El otro campo lleva al titular
+// enmascarado, así que elegir mal mostraría asteriscos en media tabla.
+const contraparte = (m) => (m.tipo === 'ingreso' ? m.nombre_remitente : m.nombre_destinatario) || m.entidad || null;
+
+const cifra = (monto, signo) => `<span class="signo">${signo}</span>${FORMATO.format(Math.abs(monto))}`;
+
+function renglon(concepto, monto, signo, clase, n) {
+  return `
+    <div class="renglon">
+      <span class="renglon__concepto">${escapar(concepto)}</span>
+      ${n != null ? `<span class="renglon__n">${n} ${n === 1 ? 'movimiento' : 'movimientos'}</span>` : ''}
+      <span class="renglon__guia" aria-hidden="true"></span>
+      <span class="renglon__monto ${clase}">${cifra(monto, signo)}</span>
+    </div>`;
+}
+
+function liquidacion(total, moneda, sinFecha, sinMonto, pendiente, nombre) {
+  const positivo = total.balance >= 0;
+  const notas = [];
+  if (pendiente) {
+    notas.push(`${FORMATO.format(pendiente)} ${moneda} de estas cifras ${pendiente === 1 ? 'está' : 'están'} pendientes de tu revisión: se cuentan, pero pueden cambiar cuando decidas en «Clasificación incierta».`);
+  }
+  if (sinMonto) {
+    notas.push(`${sinMonto} ${sinMonto === 1 ? 'movimiento no tiene' : 'movimientos no tienen'} monto, así que no ${sinMonto === 1 ? 'está sumado' : 'están sumados'} aquí. Aparece${sinMonto === 1 ? '' : 'n'} en «Clasificación incierta».`);
+  }
+  if (sinFecha) {
+    notas.push(`${sinFecha} ${sinFecha === 1 ? 'movimiento sin fecha sí está sumado' : 'movimientos sin fecha sí están sumados'} aquí, pero no ${sinFecha === 1 ? 'aparece' : 'aparecen'} en ningún mes.`);
+  }
+  const nota = notas.join(' ');
+
+  return `
+    <section class="liquidacion" aria-labelledby="tit-liquidacion">
+      <h2 class="liquidacion__titulo" id="tit-liquidacion">Liquidación · ${escapar(nombre)} · ${escapar(moneda)}</h2>
+      ${renglon('Ingresos', total.ingresos, '+', 'monto--ingreso')}
+      ${renglon('Egresos', total.egresos, '−', 'monto--egreso')}
+      <div class="total ${positivo ? 'total--positivo' : 'total--negativo'}">
+        <h3 class="total__etiqueta">Balance neto</h3>
+        <p class="total__cifra">${cifra(total.balance, positivo ? '+' : '−')}</p>
+        ${nota ? `<p class="total__nota">${escapar(nota)}</p>` : ''}
+      </div>
+    </section>`;
+}
+
+/*
+  Barras de una sola tinta a propósito: las diez categorías se distinguen por su
+  nombre, no por color. Diez tonos distintos no codificarían nada que la etiqueta
+  no diga ya, y dejarían verde y rojo sin su único significado, que es la
+  dirección del movimiento. El ancho es proporcional al mayor del grupo.
+*/
+function desglose(categorias, titulo, nota, idTitulo) {
+  if (!categorias?.length) return '';
+
+  const mayor = Math.max(...categorias.map(c => c.total));
+  const suma = categorias.reduce((acc, c) => acc + c.total, 0);
+
+  const filas = categorias.map((c) => {
+    const ancho = mayor > 0 ? (c.total / mayor) * 100 : 0;
+    const pct = c.porcentaje != null ? `${PORCENTAJE.format(c.porcentaje)}%` : '';
+    return `
+      <div class="detalle__fila">
+        <span class="detalle__nombre">${escapar(nombrarCategoria(c.categoria))}</span>
+        <span class="detalle__medida">
+          <span class="barra" role="img" aria-label="${escapar(pct)} del total">
+            <span class="barra__relleno" style="width:${ancho.toFixed(2)}%"></span>
+          </span>
+          <span class="detalle__pct">${escapar(pct)}</span>
+        </span>
+        <span class="detalle__n">${c.n_movimientos}<span class="sr"> ${c.n_movimientos === 1 ? 'movimiento' : 'movimientos'}</span></span>
+        <span class="detalle__monto">${FORMATO.format(c.total)}</span>
+      </div>`;
+  }).join('');
+
+  const totalMovs = categorias.reduce((acc, c) => acc + c.n_movimientos, 0);
+
+  return `
+    <section class="bloque" aria-labelledby="${idTitulo}">
+      <h2 class="bloque__titulo" id="${idTitulo}">${escapar(titulo)}</h2>
+      ${nota ? `<p class="bloque__nota">${escapar(nota)}</p>` : ''}
+      <div class="detalle">
+        <div class="detalle__encabezado" aria-hidden="true">
+          <span>Categoría</span>
+          <span>Participación</span>
+          <span>Movs.</span>
+          <span>Valor</span>
+        </div>
+        ${filas}
+        <div class="detalle__total">
+          <span>Total</span>
+          <span></span>
+          <span>${totalMovs}</span>
+          <span>${FORMATO.format(suma)}</span>
+        </div>
+      </div>
+    </section>`;
+}
+
+/*
+  Las barras comparten una escala única entre todos los meses: si cada periodo
+  se escalara a su propio máximo, meses muy distintos se verían iguales.
+  Ingresos y egresos llevan etiqueta escrita, así que la identidad nunca depende
+  solo del color y no hace falta una caja de leyenda aparte.
+*/
+function evolucion(periodos, moneda) {
+  const propios = periodos.filter(p => p.moneda === moneda);
+  if (propios.length < 2) return '';
+
+  const tope = Math.max(...propios.flatMap(p => [p.ingresos, p.egresos]));
+
+  const linea = (etiqueta, monto, clase, contexto) => {
+    const ancho = tope > 0 ? (monto / tope) * 100 : 0;
+    return `
+      <div class="periodo__linea">
+        <span class="periodo__etiqueta">${etiqueta}</span>
+        <span class="barra" role="img" aria-label="${etiqueta} de ${contexto}: ${FORMATO.format(monto)} ${escapar(moneda)}">
+          <span class="barra__relleno barra__relleno--${clase}" style="width:${ancho.toFixed(2)}%"></span>
+        </span>
+        <span class="periodo__valor">${FORMATO.format(monto)}</span>
+      </div>`;
+  };
+
+  const bloques = propios.map((p) => {
+    const nombre = nombrarPeriodo(p.periodo);
+    const positivo = p.balance >= 0;
+    return `
+      <article class="periodo">
+        <header class="periodo__cab">
+          <h3 class="periodo__mes">${escapar(nombre)}</h3>
+          <p class="periodo__balance ${positivo ? 'periodo__balance--positivo' : 'periodo__balance--negativo'}">
+            <small>Balance</small><span class="periodo__cifra"><span class="signo">${positivo ? '+' : '−'}</span>${FORMATO.format(Math.abs(p.balance))}</span>
+          </p>
+        </header>
+        ${linea('Ingresos', p.ingresos, 'ingreso', nombre)}
+        ${linea('Egresos', p.egresos, 'egreso', nombre)}
+      </article>`;
+  }).join('');
+
+  return `
+    <section class="bloque" aria-labelledby="tit-evolucion">
+      <h2 class="bloque__titulo" id="tit-evolucion">Evolución del periodo</h2>
+      <p class="bloque__nota">Todas las barras comparten la misma escala, así que su largo es comparable entre meses.</p>
+      <div class="evolucion">${bloques}</div>
+    </section>`;
+}
+
+const estadoLecturas = {};   // vista -> 'redactando' | 'fallo'
+
+function lectura(vista) {
+  const guardada = datosActuales.lecturas?.[vista];
+  const estado = estadoLecturas[vista];
+  const nombre = nombrarVista(vista);
+
+  let cuerpo;
+  if (guardada) {
+    const parrafos = guardada.texto.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    cuerpo = parrafos.map(p => `<p>${escapar(p)}</p>`).join('');
+  } else if (estado === 'fallo') {
+    cuerpo = `<p class="lectura__espera">No se pudo redactar la lectura de ${escapar(nombre)}.
+      <button class="boton boton--fantasma" type="button" id="lectura-actualizar">Reintentar</button></p>`;
+  } else {
+    cuerpo = `<p class="lectura__espera">Redactando la lectura de ${escapar(nombre)}…</p>`;
+  }
+
+  return `
+    <section class="lectura" aria-labelledby="tit-lectura" id="lectura" aria-busy="${!guardada && estado !== 'fallo'}">
+      <h2 class="lectura__titulo" id="tit-lectura">Lectura · ${escapar(nombre)}</h2>
+      <p class="lectura__origen">Redactada automáticamente a partir de las cifras de esta vista. El modelo escribe el texto; no calcula ninguna cantidad.</p>
+      ${guardada && !guardada.vigente ? `
+        <div class="lectura__vieja">
+          <p>Se redactó antes de los últimos cambios, así que puede citar cifras anteriores. Las tablas sí están al día.</p>
+          <button class="boton boton--fantasma" type="button" id="lectura-actualizar">Actualizar lectura</button>
+        </div>` : ''}
+      <div class="lectura__cuerpo">${cuerpo}</div>
+    </section>`;
+}
+
+function pintarLectura() {
+  const actual = document.getElementById('lectura');
+  if (!actual) return;
+  actual.outerHTML = lectura(vistaActual);
+  document.getElementById('lectura-actualizar')?.addEventListener('click', redactarDeNuevo);
+}
+
+// La primera vez que se abre una vista sin lectura, se pide una (una llamada a
+// Groq, que queda guardada). Después se reutiliza: nunca se pide sola dos veces.
+async function asegurarLectura() {
+  const vista = vistaActual;
+  if (datosActuales.lecturas?.[vista] || estadoLecturas[vista]) return;
+  if (!(await servidorDisponible())) {
+    document.getElementById('lectura')?.remove();
+    return;
+  }
+  estadoLecturas[vista] = 'redactando';
+  try {
+    const respuesta = await fetch(`/api/lectura?periodo=${encodeURIComponent(vista)}`, { cache: 'no-store' });
+    const cuerpo = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok) throw new Error(cuerpo.error);
+    datosActuales.lecturas = { ...datosActuales.lecturas, [vista]: { texto: cuerpo.texto, vigente: cuerpo.vigente } };
+    delete estadoLecturas[vista];
+  } catch {
+    estadoLecturas[vista] = 'fallo';
+  }
+  if (vistaActual === vista) pintarLectura();
+}
+
+async function redactarDeNuevo(evento) {
+  const boton = evento.currentTarget;
+  const vista = vistaActual;
+  boton.disabled = true;
+  boton.textContent = 'Redactando…';
+  try {
+    const respuesta = await fetch('/api/lectura', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ periodo: vista })
+    });
+    const cuerpo = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok) throw new Error(cuerpo.error);
+    datosActuales.lecturas = { ...datosActuales.lecturas, [vista]: { texto: cuerpo.texto, vigente: true } };
+    delete estadoLecturas[vista];
+  } catch {
+    estadoLecturas[vista] = 'fallo';
+    delete datosActuales.lecturas?.[vista];
+  }
+  if (vistaActual === vista) pintarLectura();
+}
+
+function itemMarcado(m, extra) {
+  const esIngreso = m.tipo === 'ingreso';
+  const quien = contraparte(m);
+  const motivos = leerMotivos(m.motivo_revision);
+
+  return `
+    <div class="marcado__item">
+      <p class="marcado__desc">${escapar(m.descripcion || 'Movimiento sin descripción')}</p>
+      <span class="marcado__monto ${esIngreso ? 'marcado__monto--ingreso' : 'marcado__monto--egreso'}">
+        <span class="signo">${esIngreso ? '+' : '−'}</span>${FORMATO.format(Math.abs(m.monto ?? 0))}${m.moneda ? ' ' + escapar(m.moneda) : ''}
+      </span>
+      <div class="marcado__meta">
+        <span class="marcado__fecha">${escapar(fechaCorta(m.fecha))}</span>
+        ${quien ? `<span>${escapar(quien)}</span>` : ''}
+        ${m.categoria ? `<span>${escapar(nombrarCategoria(m.categoria))}</span>` : ''}
+        ${motivos.map(mo => `<span class="motivo">${escapar(mo.etiqueta)}</span>`).join('')}
+      </div>
+      ${extra ? `<p class="marcado__razon">${extra}</p>`
+              : motivos.filter(mo => mo.razon).map(mo => `<p class="marcado__razon">${escapar(mo.razon)}</p>`).join('')}
+    </div>`;
+}
+
+function inusuales(anomalias) {
+  if (!anomalias?.length) return '';
+
+  const items = anomalias.map((a) => {
+    const razon = `Es ${escapar(String(a.veces_la_media).replace('.', ','))} veces el promedio de los ${a.tipo === 'ingreso' ? 'ingresos' : 'egresos'} de este titular. Que sea inusual no significa que esté mal: puede ser una compra grande perfectamente normal.`;
+    return itemMarcado({ ...a, motivo_revision: null }, razon);
+  }).join('');
+
+  return `
+    <section class="bloque" aria-labelledby="tit-inusuales">
+      <h2 class="bloque__titulo" id="tit-inusuales">Movimientos fuera de lo habitual</h2>
+      <p class="bloque__nota">Comparados con el comportamiento propio de este titular, no con un promedio general.</p>
+      <div class="marcado">${items}</div>
+    </section>`;
+}
+
+const MONEDAS_LISTA = ['COP', 'USD', 'EUR', 'MXN', 'ARS', 'CLP', 'PEN', 'BRL'];
+const ETIQUETAS_DECISION = { confirmado: 'Confirmado', descartado: 'Descartado', corregido: 'Corregido' };
+
+const opciones = (pares, actual, vacia) =>
+  (vacia ? `<option value="">${escapar(vacia)}</option>` : '') +
+  pares.map(([valor, texto]) => `<option value="${escapar(valor)}"${valor === actual ? ' selected' : ''}>${escapar(texto)}</option>`).join('');
+
+function campoRevision(campo, m) {
+  const etiqueta = { monto: 'Monto', tipo: 'Tipo', moneda: 'Moneda', categoria: 'Categoría', fecha: 'Fecha' }[campo];
+  let control;
+  if (campo === 'monto') {
+    control = `<input class="campo__entrada" name="monto" type="number" min="0" step="any" inputmode="decimal" value="${m.monto ?? ''}" required>`;
+  } else if (campo === 'tipo') {
+    control = `<select class="campo__entrada" name="tipo" required>${opciones([['egreso', 'Egreso'], ['ingreso', 'Ingreso']], m.tipo, 'Elige…')}</select>`;
+  } else if (campo === 'moneda') {
+    control = `<select class="campo__entrada" name="moneda" required>${opciones(MONEDAS_LISTA.map(c => [c, c]), m.moneda ?? 'COP')}</select>`;
+  } else if (campo === 'categoria') {
+    control = `<select class="campo__entrada" name="categoria">${opciones(Object.entries(CATEGORIAS), m.categoria, 'Elige…')}</select>`;
+  } else {
+    control = `<input class="campo__entrada" name="fecha" type="date" value="${escapar(m.fecha ?? '')}">`;
+  }
+  return `<label class="campo"><span class="campo__etiqueta">${etiqueta}</span>${control}</label>`;
+}
+
+function elementoPendiente(e) {
+  const m = e.movimiento;
+  const esIngreso = m.tipo === 'ingreso';
+  const quien = m.contraparte;
+  const motivos = e.motivos ?? [];
+  const faltaLoEsencial = (e.faltantes ?? []).some(c => ['monto', 'tipo', 'moneda'].includes(c));
+  const descartar = (texto = 'Descartarlo') =>
+    `<button class="boton boton--fantasma" type="button" data-accion="descartar" disabled>${texto}</button>`;
+
+  let cuerpo;
+  if (e.caso === 'duplicado') {
+    const exceso = (m.monto ?? 0) * (e.repeticiones - 1);
+    cuerpo = `
+      <p class="revision__pregunta">Aparece ${e.repeticiones} veces en el mismo extracto. ¿Es el mismo pago?</p>
+      <div class="revision__acciones">
+        <button class="boton" type="button" data-accion="duplicado_si" disabled>Sí, es el mismo pago</button>
+        <button class="boton boton--fantasma" type="button" data-accion="duplicado_no" disabled>No, son pagos distintos</button>
+      </div>
+      ${exceso ? `<p class="revision__efecto">Si es el mismo, se contará una sola vez y el balance ${esIngreso ? 'bajará' : 'subirá'} ${FORMATO.format(exceso)} ${escapar(m.moneda ?? '')}.</p>` : ''}`;
+  } else if (faltaLoEsencial) {
+    const campos = ['monto', 'tipo', 'moneda', 'categoria', 'fecha'].filter(c => (e.faltantes ?? []).includes(c) || c === 'categoria');
+    cuerpo = `
+      <p class="revision__pregunta">Faltan datos para poder sumarlo. Complétalos, o descártalo si no es un movimiento.</p>
+      <div class="revision__campos">${campos.map(c => campoRevision(c, m)).join('')}</div>
+      <div class="revision__acciones">
+        <button class="boton" type="button" data-accion="completar" disabled>Guardar</button>
+        ${descartar('No es un movimiento')}
+      </div>`;
+  } else if (motivos.includes('posible_intento_de_manipulacion')) {
+    cuerpo = `
+      <p class="revision__pregunta">El texto de este movimiento intentaba dar órdenes al sistema; se ignoraron. ¿El movimiento en sí es real?</p>
+      <div class="revision__campos">${campoRevision('categoria', m)}</div>
+      <div class="revision__acciones">
+        <button class="boton" type="button" data-accion="confirmar" disabled>Sí, es real</button>
+        ${descartar('No, descartarlo')}
+      </div>`;
+  } else if (motivos.includes('formato_numerico_ambiguo')) {
+    cuerpo = `
+      <p class="revision__pregunta">El monto podía leerse de más de una forma. Confirma el valor correcto.</p>
+      <div class="revision__campos">${campoRevision('monto', m)}</div>
+      <div class="revision__acciones">
+        <button class="boton" type="button" data-accion="confirmar" disabled>Este es el monto</button>
+        ${descartar()}
+      </div>`;
+  } else if (motivos.includes('moneda_no_especificada')) {
+    cuerpo = `
+      <p class="revision__pregunta">El extracto no decía en qué moneda estaba. Elígela para poder sumarlo.</p>
+      <div class="revision__campos">${campoRevision('moneda', m)}</div>
+      <div class="revision__acciones">
+        <button class="boton" type="button" data-accion="confirmar" disabled>Guardar moneda</button>
+        ${descartar()}
+      </div>`;
+  } else {
+    cuerpo = `
+      <div class="revision__campos">${campoRevision('categoria', m)}</div>
+      <div class="revision__acciones">
+        <button class="boton" type="button" data-accion="confirmar" disabled>Está bien</button>
+        ${descartar()}
+      </div>`;
+  }
+
+  return `
+    <div class="revision__item" data-ids="${escapar(JSON.stringify(e.ids))}"
+         data-original="${escapar(JSON.stringify({ monto: m.monto, moneda: m.moneda, categoria: m.categoria }))}">
+      <div class="revision__cabeza">
+        <p class="marcado__desc">${escapar(m.descripcion || 'Movimiento sin descripción')}</p>
+        ${m.monto != null ? `<span class="marcado__monto ${esIngreso ? 'marcado__monto--ingreso' : 'marcado__monto--egreso'}"><span class="signo">${esIngreso ? '+' : '−'}</span>${FORMATO.format(m.monto)}${m.moneda ? ' ' + escapar(m.moneda) : ''}${e.repeticiones > 1 ? ` <span class="revision__veces">× ${e.repeticiones}</span>` : ''}</span>` : '<span class="marcado__monto revision__sin-monto">sin monto</span>'}
+      </div>
+      <div class="marcado__meta">
+        <span class="marcado__fecha">${escapar(fechaCorta(m.fecha))}</span>
+        ${quien ? `<span>${escapar(quien)}</span>` : ''}
+        ${m.categoria ? `<span>${escapar(nombrarCategoria(m.categoria))}</span>` : ''}
+        ${leerMotivos(motivos.join(',')).map(mo => `<span class="motivo">${escapar(mo.etiqueta)}</span>`).join('')}
+      </div>
+      ${cuerpo}
+      <p class="revision__error" role="alert"></p>
+    </div>`;
+}
+
+function elementoResuelto(e) {
+  const m = e.movimiento;
+  const etiqueta = e.caso === 'duplicado'
+    ? (e.decisiones.includes('descartado') ? 'Contado una vez' : 'Son pagos distintos')
+    : (ETIQUETAS_DECISION[e.decisiones[0]] ?? 'Revisado');
+  return `
+    <div class="revision__resuelto" data-ids="${escapar(JSON.stringify(e.ids))}">
+      <span class="revision__resuelto-desc">${escapar(m.descripcion || 'Movimiento')}${m.monto != null ? ` · ${FORMATO.format(m.monto)}` : ''}</span>
+      <span class="motivo">${escapar(etiqueta)}</span>
+      <button class="adjuntos__quitar" type="button" data-accion="deshacer" disabled>Deshacer</button>
+    </div>`;
+}
+
+function revisionSeccion(revision) {
+  const pendientes = revision?.pendientes ?? [];
+  const resueltos = revision?.resueltos ?? [];
+
+  if (!pendientes.length && !resueltos.length) {
+    return `
+      <section class="bloque" aria-labelledby="tit-revision" id="revision">
+        <h2 class="bloque__titulo" id="tit-revision">Clasificación incierta</h2>
+        <p class="bloque__nota">Ningún movimiento quedó pendiente de revisión: el sistema pudo clasificarlos todos con la información disponible.</p>
+      </section>`;
+  }
+
+  return `
+    <section class="bloque" aria-labelledby="tit-revision" id="revision">
+      <h2 class="bloque__titulo" id="tit-revision">Clasificación incierta</h2>
+      <p class="bloque__nota">${pendientes.length
+        ? `El sistema no pudo clasificar ${pendientes.length === 1 ? 'este caso' : `estos ${pendientes.length} casos`} con certeza y prefirió preguntarte a inventar. Lo que decidas se refleja al instante en todas las cifras.`
+        : 'Ya revisaste todo lo pendiente. Puedes deshacer cualquier decisión.'}</p>
+      <p class="revision__aviso" id="revision-aviso" role="status" aria-live="polite"></p>
+      ${pendientes.length ? `<div class="marcado">${pendientes.map(elementoPendiente).join('')}</div>` : ''}
+      ${resueltos.length ? `
+        <h3 class="revision__subtitulo">Ya revisados</h3>
+        <div class="revision__resueltos">${resueltos.map(elementoResuelto).join('')}</div>` : ''}
+    </section>`;
+}
+
+function libro(movimientos) {
+  if (!movimientos?.length) return '';
+
+  const marcados = movimientos.filter(m => m.pendiente).length;
+  const vigentes = movimientos.filter(m => m.decision !== 'descartado').length;
+
+  const filas = movimientos.map((m) => {
+    const esIngreso = m.tipo === 'ingreso';
+    const quien = contraparte(m);
+    const descartado = m.decision === 'descartado';
+    return `
+      <div class="libro__fila${descartado ? ' libro__fila--descartada' : ''}">
+        <span class="libro__fecha">${escapar(fechaCorta(m.fecha))}</span>
+        <span class="libro__concepto">
+          <span class="libro__desc">${escapar(m.descripcion || 'Sin descripción')}</span>${
+            m.pendiente
+              ? `<a class="llamada" href="#tit-revision" title="Pendiente de revisión" aria-label="Pendiente de revisión">*</a>`
+              : ''}${
+            descartado ? ' <span class="motivo motivo--apagado">descartado</span>'
+              : m.decision === 'corregido' ? ' <span class="motivo motivo--apagado">corregido</span>' : ''}
+          ${quien ? `<span class="libro__parte"> · ${escapar(quien)}</span>` : ''}
+        </span>
+        <span class="libro__cat">${escapar(nombrarCategoria(m.categoria))}</span>
+        <span class="libro__valor ${esIngreso ? 'libro__valor--ingreso' : 'libro__valor--egreso'}">
+          <span class="signo">${esIngreso ? '+' : '−'}</span>${FORMATO.format(Math.abs(m.monto ?? 0))}
+        </span>
+      </div>`;
+  }).join('');
+
+  return `
+    <section class="bloque" aria-labelledby="tit-libro">
+      <h2 class="bloque__titulo" id="tit-libro">Movimientos del periodo</h2>
+      <p class="bloque__nota">Los ${vigentes} movimientos, del más reciente al más antiguo${
+        vigentes !== movimientos.length ? `. Los descartados se muestran tachados y no cuentan en ninguna cifra` : ''}.</p>
+      <div class="libro">
+        <div class="libro__encabezado">
+          <span>Fecha</span>
+          <span>Concepto</span>
+          <span>Categoría</span>
+          <span>Valor</span>
+        </div>
+        ${filas}
+      </div>
+      ${marcados ? `<p class="libro__pie"><span class="llamada">*</span> ${marcados === 1 ? 'Este movimiento requiere' : `Estos ${marcados} movimientos requieren`} revisión. Puedes resolverlo más arriba, en «Clasificación incierta».</p>` : ''}
+    </section>`;
+}
+
+const nombrarVista = (vista) => vista === 'todo' ? 'todo el periodo' : nombrarPeriodo(vista);
+const capitalizar = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
+
+function selectorVista(datos) {
+  const rango = rangoPeriodos(datos.vistas.todo.periodos);
+  // Los meses más recientes primero: con muchos meses cargados es lo que más se consulta.
+  const meses = [...(datos.periodos_disponibles ?? [])].reverse();
+  return `
+    <label class="selector">
+      <span class="selector__etiqueta">Periodo</span>
+      <select class="campo__entrada selector__lista" id="vista">
+        <option value="todo"${vistaActual === 'todo' ? ' selected' : ''}>Todo · ${escapar(rango)}</option>
+        ${meses.map(m => `<option value="${escapar(m)}"${vistaActual === m ? ' selected' : ''}>${escapar(capitalizar(nombrarPeriodo(m)))}</option>`).join('')}
+      </select>
+    </label>`;
+}
+
+function membrete(datos, v) {
+  const generado = new Date(datos.generado);
+  const fechaLegible = `${generado.getDate()} ${MESES[generado.getMonth()]} ${generado.getFullYear()}`;
+
+  return `
+    <header class="membrete">
+      <div class="membrete__emisor">
+        <h1 class="membrete__titulo">Estado de cuenta</h1>
+        ${selectorVista(datos)}
+      </div>
+      <dl class="documento">
+        <dt>Titular</dt><dd>${escapar(datos.cliente_id)}</dd>
+        <dt>Movimientos</dt><dd>${v.total_movimientos}</dd>
+        <dt>Moneda</dt><dd>${escapar(datos.moneda_principal ?? '—')}</dd>
+        <dt>Emitido</dt><dd>${escapar(fechaLegible)}</dd>
+      </dl>
+    </header>`;
+}
+
+function avisoOtrasMonedas(totales) {
+  if (totales.length < 2) return '';
+  const otras = totales.slice(1).map(t => t.moneda).join(', ');
+  return `<p class="total__nota">Este estado liquida ${escapar(totales[0].moneda)}. Hay movimientos en ${escapar(otras)} que no se suman aquí: mezclar monedas daría una cifra sin significado.</p>`;
+}
+
+/* ───────────── Consulta sobre el periodo ───────────── */
+
+// Respaldo para la versión estática. Con servidor se piden a /api/sugerencias,
+// que es la fuente de verdad.
+const SUGERIDAS_RESPALDO = [
+  '¿En qué categoría gasto más dinero?',
+  '¿Cómo ha cambiado mi balance de un mes a otro?',
+  '¿Hay algún movimiento fuera de lo normal que deba revisar?'
+];
+const MAX_PREGUNTA = 300;
+const historialConsulta = [];
+let consultando = false;
+
+const ETIQUETAS_ESTADO = {
+  cortesia: '',
+  rechazo: 'No procesada',
+  fuera_de_dominio: 'Fuera de alcance',
+  limite: 'En pausa',
+  sin_datos: 'Sin datos',
+  error: 'No disponible'
+};
+
+function consulta() {
+  return `
+    <section class="consulta" aria-labelledby="tit-consulta">
+      <h2 class="bloque__titulo" id="tit-consulta">Pregunta sobre este periodo</h2>
+      <p class="bloque__nota" id="consulta-nota">Comprobando si el asistente está disponible…</p>
+      <div class="consulta__sugeridas" id="consulta-sugeridas" role="group" aria-label="Preguntas sugeridas">
+        ${SUGERIDAS_RESPALDO.map(s => `<button class="sugerida" type="button" disabled>${escapar(s)}</button>`).join('')}
+      </div>
+      <div class="consulta__hilo" id="consulta-hilo" aria-live="polite"></div>
+      <form class="consulta__form" id="consulta-form" autocomplete="off">
+        <label class="sr" for="consulta-entrada">Tu pregunta</label>
+        <input class="consulta__entrada" id="consulta-entrada" type="text" maxlength="${MAX_PREGUNTA}"
+               placeholder="Por ejemplo: ¿cuánto gasté en comida en septiembre?" disabled>
+        <button class="boton" type="submit" id="consulta-boton" disabled>Preguntar</button>
+      </form>
+      <div class="consulta__pie">
+        <span>Las cifras salen de tus movimientos guardados; el modelo solo redacta la respuesta.</span>
+        <span class="consulta__contador" id="consulta-contador">0 / ${MAX_PREGUNTA}</span>
+      </div>
+    </section>`;
+}
+
+const normalizarPregunta = (t) => String(t ?? '').toLowerCase()
+  .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ ]/g, '').replace(/\s+/g, ' ').trim();
+
+function habilitarConsulta(activo) {
+  document.getElementById('consulta-entrada').disabled = !activo;
+  document.getElementById('consulta-boton').disabled = !activo;
+  document.querySelectorAll('#consulta-sugeridas .sugerida').forEach(b => { b.disabled = !activo; });
+}
+
+function agregarIntercambio(pregunta) {
+  const hilo = document.getElementById('consulta-hilo');
+  const nodo = document.createElement('div');
+  nodo.className = 'intercambio intercambio--pendiente';
+  nodo.innerHTML = `
+    <p class="intercambio__pregunta">${escapar(pregunta)}</p>
+    <p class="intercambio__respuesta">Consultando…</p>`;
+  hilo.appendChild(nodo);
+  nodo.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  return nodo;
+}
+
+function completarIntercambio(nodo, pregunta, datos) {
+  const tipo = datos?.tipo ?? 'error';
+  const etiqueta = ETIQUETAS_ESTADO[tipo];
+  const reescrita = datos?.pregunta_reescrita;
+  // Si el sistema reinterpretó la pregunta ("¿y en salud?"), se muestra cómo:
+  // así el titular sabe exactamente qué se respondió.
+  const mostrarReescrita = tipo === 'respuesta' && reescrita
+    && normalizarPregunta(reescrita) !== normalizarPregunta(pregunta);
+
+  nodo.className = `intercambio ${tipo === 'respuesta' ? '' : 'intercambio--aviso'}`;
+  nodo.innerHTML = `
+    <p class="intercambio__pregunta">${escapar(pregunta)}</p>
+    <p class="intercambio__respuesta">${etiqueta ? `<span class="intercambio__estado">${escapar(etiqueta)}</span>` : ''}${escapar(datos?.texto ?? 'No pude responder en este momento.')}</p>
+    ${mostrarReescrita ? `<p class="intercambio__nota">Entendí: «${escapar(reescrita)}»</p>` : ''}`;
+}
+
+async function enviarPregunta(texto) {
+  const pregunta = String(texto ?? '').trim();
+  if (!pregunta || consultando) return;
+
+  consultando = true;
+  habilitarConsulta(false);
+  const entrada = document.getElementById('consulta-entrada');
+  entrada.value = '';
+  actualizarContador();
+  const nodo = agregarIntercambio(pregunta);
+
+  try {
+    const respuesta = await fetch('/api/preguntar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // Solo los últimos turnos con respuesta real: los rechazos y saludos no
+      // aportan contexto para resolver referencias.
+      body: JSON.stringify({ pregunta, historial: historialConsulta.slice(-3), vista: vistaActual === 'todo' ? null : vistaActual })
+    });
+    const datos = await respuesta.json().catch(() => null);
+    completarIntercambio(nodo, pregunta, datos);
+    if (datos?.tipo === 'respuesta') {
+      historialConsulta.push({ pregunta: datos.pregunta_reescrita || pregunta, respuesta: datos.texto, filtros: datos.filtros || null });
+    }
+  } catch {
+    completarIntercambio(nodo, pregunta, { tipo: 'error', texto: 'No se pudo contactar al servidor.' });
+  } finally {
+    consultando = false;
+    habilitarConsulta(true);
+    entrada.focus();
+  }
+}
+
+function actualizarContador() {
+  const largo = document.getElementById('consulta-entrada').value.length;
+  const contador = document.getElementById('consulta-contador');
+  contador.textContent = `${largo} / ${MAX_PREGUNTA}`;
+  contador.classList.toggle('consulta__contador--lleno', largo >= MAX_PREGUNTA);
+}
+
+function pintarSugeridas(lista) {
+  const contenedor = document.getElementById('consulta-sugeridas');
+  contenedor.innerHTML = lista.map(s => `<button class="sugerida" type="button">${escapar(s)}</button>`).join('');
+}
+
+async function activarConsulta() {
+  const nota = document.getElementById('consulta-nota');
+  if (!nota) return;
+
+  document.getElementById('consulta-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    enviarPregunta(document.getElementById('consulta-entrada').value);
+  });
+  document.getElementById('consulta-entrada').addEventListener('input', actualizarContador);
+  document.getElementById('consulta-sugeridas').addEventListener('click', (e) => {
+    const boton = e.target.closest('.sugerida');
+    if (boton && !boton.disabled) enviarPregunta(boton.textContent);
+  });
+
+  try {
+    // Ambas respuestas se piden una sola vez por carga de página: cambiar de
+    // vista repinta la sección, pero no debe volver a preguntar al servidor.
+    if (!(await servidorDisponible())) throw new Error();
+    const sugeridas = await sugerenciasCache();
+    pintarSugeridas(Array.isArray(sugeridas) && sugeridas.length ? sugeridas : SUGERIDAS_RESPALDO);
+    nota.textContent = vistaActual === 'todo'
+      ? 'Pregunta sobre tus ingresos, gastos, categorías o meses. Puedes encadenar preguntas: «¿y en agosto?».'
+      : `Si no mencionas un mes, se responde sobre ${nombrarVista(vistaActual)}. Puedes encadenar preguntas: «¿y en transporte?».`;
+    habilitarConsulta(true);
+  } catch {
+    nota.innerHTML = 'Disponible solo con el servidor local: <code>python servidor.py</code> desde la carpeta <code>Makers</code>.';
+  }
+}
+
+let datosActuales = null;
+let vistaActual = 'todo';
+
+function render(datos, { conservar = false } = {}) {
+  if (!datos.vistas?.[vistaActual]) vistaActual = 'todo';
+  const v = datos.vistas?.[vistaActual];
+  const total = v?.totales?.[0];
+  if (!total) return mostrarAviso('Sin movimientos', '<p>Este estado de cuenta no tiene movimientos para mostrar.</p>');
+  datosActuales = datos;
+  const nombre = nombrarVista(vistaActual);
+  const movimientos = vistaActual === 'todo'
+    ? datos.movimientos
+    : datos.movimientos.filter(m => (m.fecha ?? '').startsWith(vistaActual));
+
+  // Al recalcular tras una decisión, se repinta todo el estado de cuenta, pero
+  // la conversación con el asistente y la posición de lectura se conservan.
+  const hilo = conservar ? document.getElementById('consulta-hilo')?.innerHTML : null;
+  const posicion = window.scrollY;
+
+  document.getElementById('raiz').innerHTML = `
+    <main>
+      ${membrete(datos, v)}
+      ${liquidacion(total, total.moneda, v.movimientos_sin_fecha, v.movimientos_sin_monto, v.monto_pendiente, nombre)}
+      ${avisoOtrasMonedas(v.totales)}
+      ${lectura(vistaActual)}
+      ${consulta()}
+      ${vistaActual === 'todo' ? evolucion(v.periodos, total.moneda) : ''}
+      ${desglose(v.categorias_egreso, 'A dónde se fue el dinero', 'Ordenado por monto. La barra compara cada categoría con la mayor del periodo.', 'tit-egresos')}
+      ${desglose(v.categorias_ingreso, 'De dónde vino el dinero', null, 'tit-ingresos')}
+      ${inusuales(v.anomalias)}
+      ${revisionSeccion(datos.revision)}
+      ${libro(movimientos)}
+    </main>`;
+
+  document.title = `Estado de cuenta · ${datos.cliente_id} · Jhan y Jhon`;
+  activarConsulta();
+  if (hilo) document.getElementById('consulta-hilo').innerHTML = hilo;
+  activarRevision();
+  document.getElementById('lectura-actualizar')?.addEventListener('click', redactarDeNuevo);
+  document.getElementById('vista').addEventListener('change', (e) => cambiarVista(e.target.value));
+  asegurarLectura();
+  if (conservar) window.scrollTo(0, posicion);
+}
+
+// Atrás, adelante o editar la URL a mano también cambian de vista.
+window.addEventListener('hashchange', () => {
+  const pedida = decodeURIComponent(location.hash.slice(1)) || 'todo';
+  if (datosActuales && pedida !== vistaActual) cambiarVista(pedida);
+});
+
+// Cambiar de periodo no pide nada: todas las vistas vienen ya calculadas.
+function cambiarVista(vista) {
+  if (!datosActuales.vistas[vista]) return;
+  vistaActual = vista;
+  history.replaceState(null, '', vista === 'todo' ? location.pathname : `#${vista}`);
+  render(datosActuales, { conservar: true });
+}
+
+/* ───────────── Acciones de revisión ───────────── */
+
+let servidorPromesa = null;
+const servidorDisponible = () => (servidorPromesa ??= fetch('/api/estado', { cache: 'no-store' })
+  .then(r => r.ok).catch(() => false));
+
+let sugerenciasPromesa = null;
+const sugerenciasCache = () => (sugerenciasPromesa ??= fetch('/api/sugerencias', { cache: 'no-store' })
+  .then(r => r.json()).catch(() => SUGERIDAS_RESPALDO));
+
+async function enviarRevision(accion, ids, valores) {
+  const respuesta = await fetch('/api/revision', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, ids, valores })
+  });
+  const cuerpo = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) throw new Error(cuerpo.error || 'No se pudo guardar la decisión.');
+  return cuerpo.datos;
+}
+
+function leerValores(item) {
+  const valores = {};
+  item.querySelectorAll('[name]').forEach((control) => {
+    if (control.value === '') return;
+    valores[control.name] = control.name === 'monto' ? Number(control.value) : control.value;
+  });
+  return valores;
+}
+
+// Traduce el botón a la acción del servidor. "Confirmar" se convierte en
+// corrección si el titular cambió algún valor antes de pulsarlo.
+function construirPeticion(accion, item) {
+  const ids = JSON.parse(item.dataset.ids);
+  if (accion === 'completar') return { accion: 'corregir', ids, valores: leerValores(item) };
+  if (accion !== 'confirmar') return { accion, ids };
+
+  const original = JSON.parse(item.dataset.original || '{}');
+  const cambios = Object.fromEntries(Object.entries(leerValores(item)).filter(([campo, valor]) => valor !== original[campo]));
+  return Object.keys(cambios).length ? { accion: 'corregir', ids, valores: cambios } : { accion: 'confirmar', ids };
+}
+
+const AVISOS = {
+  duplicado_si: 'Listo: se cuenta una sola vez y las cifras ya están recalculadas.',
+  duplicado_no: 'Listo: ambos pagos se mantienen.',
+  descartar: 'Listo: ya no cuenta en ninguna cifra.',
+  deshacer: 'Decisión deshecha: las cifras volvieron a como estaban.',
+  corregir: 'Listo: las cifras ya usan el valor corregido.',
+  confirmar: 'Listo: confirmado.'
+};
+
+async function activarRevision() {
+  const seccion = document.getElementById('revision');
+  if (!seccion) return;
+  const disponible = await servidorDisponible();
+
+  if (!disponible) {
+    const nota = document.createElement('p');
+    nota.className = 'revision__estatico';
+    nota.innerHTML = 'Para decidir sobre estos casos hace falta el servidor local: <code>python servidor.py</code> desde la carpeta <code>Makers</code>.';
+    seccion.querySelector('.bloque__nota')?.after(nota);
+    return;
+  }
+
+  seccion.querySelectorAll('button[data-accion]').forEach(b => { b.disabled = false; });
+
+  seccion.addEventListener('click', async (evento) => {
+    const boton = evento.target.closest('button[data-accion]');
+    if (!boton || boton.disabled) return;
+    const item = boton.closest('[data-ids]');
+    const error = item.querySelector('.revision__error');
+    const peticion = construirPeticion(boton.dataset.accion, item);
+
+    item.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    if (error) error.textContent = '';
+    try {
+      const datos = await enviarRevision(peticion.accion, peticion.ids, peticion.valores);
+      render(datos, { conservar: true });
+      const aviso = document.getElementById('revision-aviso');
+      if (aviso) aviso.textContent = AVISOS[peticion.accion] ?? 'Listo.';
+    } catch (fallo) {
+      if (error) error.textContent = fallo.message;
+      item.querySelectorAll('button').forEach(b => { b.disabled = false; });
+    }
+  });
+}
+
+
+function mostrarAviso(titulo, cuerpoHtml) {
+  document.getElementById('raiz').innerHTML = `
+    <div class="aviso">
+      <h2>${escapar(titulo)}</h2>
+      ${cuerpoHtml}
+    </div>`;
+}
+
+fetch('./datos.json', { cache: 'no-store' })
+  .then((respuesta) => {
+    if (!respuesta.ok) throw new Error(`El servidor respondió ${respuesta.status}`);
+    return respuesta.json();
+  })
+  .then((datos) => {
+    const pedida = decodeURIComponent(location.hash.slice(1));
+    if (datos.vistas?.[pedida]) vistaActual = pedida;
+    render(datos);
+  })
+  .catch((error) => {
+    const esProtocoloArchivo = location.protocol === 'file:';
+    mostrarAviso(
+      esProtocoloArchivo ? 'Hace falta servir la página' : 'No se pudo leer datos.json',
+      esProtocoloArchivo
+        ? `<p>El navegador bloquea la lectura de archivos locales cuando la página se abre con doble clic. Sirve la carpeta y ábrela desde ahí:</p>
+           <p><code>cd dashboard &amp;&amp; python -m http.server 8000</code></p>
+           <p>Luego entra a <code>http://localhost:8000</code>.</p>`
+        : `<p>${escapar(error.message)}.</p>
+           <p>Genera el archivo con <code>python main.py --exportar --cliente cliente_demo</code> desde la carpeta <code>Makers</code>.</p>`
+    );
+  });
+</script>
+</body>
+</html>

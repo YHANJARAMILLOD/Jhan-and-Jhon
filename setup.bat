@@ -12,6 +12,10 @@ python -m pip install --upgrade pip
 echo Instalando dependencias...
 pip install -r requirements.txt
 
+echo Descargando modelos de Ollama...
+ollama pull qwen3:8b
+ollama pull bge-m3
+
 echo.
 echo ==================================
 echo Setup completado correctamente
